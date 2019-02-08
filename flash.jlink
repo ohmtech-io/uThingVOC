@@ -1,0 +1,11 @@
+speed 500
+device STM32F072CB
+si 1
+con
+sleep 100
+r
+h
+loadfile build/USBthingVOC.hex
+r
+g
+q

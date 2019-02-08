@@ -1,0 +1,6 @@
+*.d
+*.lst
+*.o
+*.log
+.gdb_history
+*.map
