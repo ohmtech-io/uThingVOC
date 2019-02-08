@@ -16,11 +16,13 @@
 ## Bosch BSEC library
 
 The Bosch BSEC library is provided as a closed source binary file upon acceptance of a license agreement.
+
 Therefore the user needs to read the license and download the library here:
 https://www.bosch-sensortec.com/bst/products/all_products/bsec
 
 The initial revision of uThing::VOC uses the BSEC version v1.4.7.1 | Sept. 18th, 2018.
-After download, locate the appropriate version of the binary file for the Lite version.
+
+After download, locate the appropriate version of the binary file for the **Lite** version.
 The file can be found under the following path:
 `DownloadedPackage/algo/bin/Lite_version/Cortex_M0/libalgobsec.a`
 
@@ -56,7 +58,9 @@ The programming via USB requires two steps:
 
 1. **Booting the dongle into USB-DFU mode**:
 
-    The MCU has a special Bootloader in ROM memory, which provides the functionality of DFU. In order to start this process, the MCU has to be reset into this **DFU-Bootloader mode**. This is accomplished by powering-up the device while holding the **BOOT0** line (pin #44) into logic-high level (3.3V / VCC).
+    The MCU has a special Bootloader in ROM memory, which provides the functionality of DFU. In order to start this process, the MCU has to be reset into this **DFU-Bootloader mode**. This is accomplished by powering-up the device while holding the **BOOT0** line (pin #44) into logic-high level (3.3V / **VCC**).
+
+    ![uThingVOC](/img/Boot0-location.jpg)
 
     To do this, unplug the dongle, hold a jumper (conductive material, like a piece of wire, screwdriver, paper-clip, etc.) between the VCC and BOOT0 pins with the precaution of not short-circuit any other pin, and plug the device into the USB while shorting these 2 pins. In this case, both status LEDs should stay OFF. The jumper can be then released.
 
