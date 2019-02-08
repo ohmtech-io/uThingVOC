@@ -2,7 +2,7 @@
 
 ![uThingVOC](/img/uThingVOC-block-diagram.png)
 
-### Air Quality USB dongle with configurable output format 
+### Air-Quality sensor USB dongle with configurable output format 
 
 ## Toolchain
 
@@ -32,10 +32,10 @@ Then copy the library into the project source as:
 ## Building
 
 ```
-make
+make clean && make
 ```
 
-*Note:* There is a macro which enable/disable printing some debug information (using it as UartLog()) often useful for development while monitoring the USART1 TX pad on the board bottom. To enable it, compile with:
+*Note:* There is a macro which enable/disable printing some debug information (using it as *UartLog()*) often useful for development while monitoring the USART1 TX pad on the board bottom side. To enable it, compile with:
 
 ```
 make DEBUG=1
@@ -45,16 +45,19 @@ make DEBUG=1
 
 ### Using JLink connected to the SWD port
 
-In this case, it's necesary to solder the correspondent signals to the SWD port on the board bottom (do not forget to connect the 3V3 power signal or JLink won't detect the target).
+In this case, it's necessary to solder the correspondent signals to the SWD port on the board bottom (do not forget to connect the 3V3 power signal or JLink won't detect the target).
 
 ```
 make flash
 ```
+
+*Note*: Different debug probes could be used (as the ones based on FT2232/OpenOcd or ST-Link).
+
 ### Using USB-DFU
 
 If the intention is to simply update the firmware, or just program a slightly modified version without the need for extensive debugging / testing, the MCU can be re-flashed via the USB port by using the on-board USB-DFU capability.
 
-The programming via USB requires two steps:
+The programming process via USB requires two steps:
 
 1. **Booting the dongle into USB-DFU mode**:
 
@@ -64,7 +67,9 @@ The programming via USB requires two steps:
 
     To do this, unplug the dongle, hold a jumper (conductive material, like a piece of wire, screwdriver, paper-clip, etc.) between the VCC and BOOT0 pins with the precaution of not short-circuit any other pin, and plug the device into the USB while shorting these 2 pins. In this case, both status LEDs should stay OFF. The jumper can be then released.
 
-    To verify if the Bootloader enumerated the MCU this time as a USB-DFU capable device, use the command lsusb This is the displayed information in MacOS:
+    To verify if the Bootloader enumerated the MCU this time as a USB-DFU capable device, use the command `lsusb`.
+
+    This is the displayed information in MacOS:
 
     ```
     Bus 020 Device 008: ID 0483:df11 STMicroelectronics STM32  BOOTLOADER  Serial: FFFFFFFEFFFF
@@ -76,15 +81,39 @@ The programming via USB requires two steps:
     Bus 001 Device 004: ID 0483:df11 STMicroelectronics STM Device in DFU Mode
     ```
 
-    In Windows, the Device Manager show a “STM Device in DFU Mode” under USB devices.
+    In Windows, the Device Manager shows a *“STM Device in DFU Mode”* under USB devices.
 
 2. **The DFU-UTIL command**:
 
-    DFU-UTIL is a CLI application available for MacOS, Linux and Windows. In the Unix-based systems it’s available in the usual packet managers (Brew, apt-get, etc.). The version v0.9 is the latest one at the moment of writing and it’s been tested successfully on Debian16 and MacOS.
+    DFU-UTIL is a CLI application available for MacOS, Linux and Windows. In the Unix-based systems it’s available in the usual packet managers (Homebrew, apt-get, etc.). The version v0.9 is the latest one at the moment of writing and it’s been tested successfully on Debian16 and MacOS.
 
-    To perform the firmware programming, issue the following command, where “USBthingVOC.bin” is the application to flash in .bin format (no HEX or ELF supported):
+    To perform the firmware programming, issue the following command, where “USBthingVOC.bin” is the application to flash in **.bin** format (no HEX or ELF supported):
 
     ```    
     dfu-util -a 0 -D USBthingVOC.bin --dfuse-address 0x0800C000 -d 0483:df11
     ```
-     *Note:* In Linux, the dfu-util needs to be run as root, or a udev rule and permissions should be added.
+     *Note:* In Linux, the dfu-util needs to be run as **root**, or a udev rule and permissions should be added.
+
+------------------
+
+**MIT License**
+
+** Copyright (c) 2019 Daniel Mancuso - OhmTech.io **
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.     
