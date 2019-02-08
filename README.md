@@ -38,7 +38,7 @@ If the intention is to simply update the firmware, or just program a slightly mo
 
 The programming via USB requires two steps:
 
-1. Booting the dongle into USB-DFU mode:
+1. **Booting the dongle into USB-DFU mode**:
 
     The MCU has a special Bootloader in ROM memory, which provides the functionality of DFU. In order to start this process, the MCU has to be reset into this Bootloader mode. This is accomplished by powering-up the device while holding the BOOT0 line (pin #44) into logic-high level (3.3V / VCC).
 
@@ -46,20 +46,25 @@ The programming via USB requires two steps:
 
     To verify if the Bootloader enumerated the MCU this time as a USB-DFU capable device, use the command lsusb This is the displayed information in MacOS:
 
-```
-Bus 020 Device 008: ID 0483:df11 STMicroelectronics STM32  BOOTLOADER  Serial: FFFFFFFEFFFF
-```
-In a Debian distribution:
-```
-Bus 001 Device 004: ID 0483:df11 STMicroelectronics STM Device in DFU Mode
-```
-In Windows, the Device Manager show a “STM Device in DFU Mode” under USB devices.
+    ```
+    Bus 020 Device 008: ID 0483:df11 STMicroelectronics STM32  BOOTLOADER  Serial: FFFFFFFEFFFF
+    ```
 
-2. The DFU-UTIL command:
+    In a Debian distribution:
+
+    ```
+    Bus 001 Device 004: ID 0483:df11 STMicroelectronics STM Device in DFU Mode
+    ```
+
+    In Windows, the Device Manager show a “STM Device in DFU Mode” under USB devices.
+
+2. **The DFU-UTIL command**:
 
     DFU-UTIL is a CLI application available for MacOS, Linux and Windows. In the Unix-based systems it’s available in the usual packet managers (Brew, apt-get, etc.). The version v0.9 is the latest one at the moment of writing and it’s been tested successfully on Debian16 and MacOS.
 
     To perform the firmware programming, issue the following command, where “USBthingVOC.bin” is the application to flash in .bin format (no HEX or ELF supported):
-```    
-dfu-util -a 0 -D USBthingVOC.bin --dfuse-address 0x0800C000 -d 0483:df11
-```
+
+    ```    
+    dfu-util -a 0 -D USBthingVOC.bin --dfuse-address 0x0800C000 -d 0483:df11
+    ```
+     *Note:* In Linux, the dfu-util needs to be run as root, or a udev rule and permissions should be added.
