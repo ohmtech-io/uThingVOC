@@ -1,5 +1,7 @@
 # uThing::VOC
 
+![uThingVOC](/img/uThingVOC-block-diagram.png)
+
 ### Air Quality USB dongle with configurable output format 
 
 ## Toolchain
@@ -9,7 +11,10 @@
     Altought different versions of the ARM-GCC compiler may work, the prototype was developed and tested with the *gcc-arm-none-eabi-8-2018-q4-mayor* version, available in the ARM website: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads.
 
 2. Change the GCC_PATH path on the Makefile with your toolchain's location.
-    Alternatively, compile adding the **GCC_PATH** to the *make* command (*make GCC_PATH="/gcc-arm-path"*) or add it as environment variable.
+    Alternatively, compile adding the **GCC_PATH** to the *make* command (`make GCC_PATH="/gcc-arm-path"`) or add it as environment variable.
+
+## Bosch BSEC library
+
 
 ## Building
 
@@ -17,7 +22,7 @@
 make
 ```
 
-There is a macro which enable/disable printing some debug information (using it as UartLog()) often useful for development while monitoring the USART1 TX pad on the board bottom. To enable it, compile with:
+*Note:* There is a macro which enable/disable printing some debug information (using it as UartLog()) often useful for development while monitoring the USART1 TX pad on the board bottom. To enable it, compile with:
 
 ```
 make DEBUG=1
@@ -40,7 +45,7 @@ The programming via USB requires two steps:
 
 1. **Booting the dongle into USB-DFU mode**:
 
-    The MCU has a special Bootloader in ROM memory, which provides the functionality of DFU. In order to start this process, the MCU has to be reset into this Bootloader mode. This is accomplished by powering-up the device while holding the BOOT0 line (pin #44) into logic-high level (3.3V / VCC).
+    The MCU has a special Bootloader in ROM memory, which provides the functionality of DFU. In order to start this process, the MCU has to be reset into this **DFU-Bootloader mode**. This is accomplished by powering-up the device while holding the **BOOT0** line (pin #44) into logic-high level (3.3V / VCC).
 
     To do this, unplug the dongle, hold a jumper (conductive material, like a piece of wire, screwdriver, paper-clip, etc.) between the VCC and BOOT0 pins with the precaution of not short-circuit any other pin, and plug the device into the USB while shorting these 2 pins. In this case, both status LEDs should stay OFF. The jumper can be then released.
 
