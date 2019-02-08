@@ -8,13 +8,24 @@
 
 1. Get the ARM-GCC compiler for your platform.
 
-    Altought different versions of the ARM-GCC compiler may work, the prototype was developed and tested with the *gcc-arm-none-eabi-8-2018-q4-mayor* version, available in the ARM website: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads.
+    Although different versions of the ARM-GCC compiler may work correctly, the prototype was developed and tested using the *gcc-arm-none-eabi-8-2018-q4-mayor* version, available in the ARM website: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads.
 
 2. Change the GCC_PATH path on the Makefile with your toolchain's location.
     Alternatively, compile adding the **GCC_PATH** to the *make* command (`make GCC_PATH="/gcc-arm-path"`) or add it as environment variable.
 
 ## Bosch BSEC library
 
+The Bosch BSEC library is provided as a closed source binary file upon acceptance of a license agreement.
+Therefore the user needs to read the license and download the library here:
+https://www.bosch-sensortec.com/bst/products/all_products/bsec
+
+The initial revision of uThing::VOC uses the BSEC version v1.4.7.1 | Sept. 18th, 2018.
+After download, locate the appropriate version of the binary file for the Lite version.
+The file can be found under the following path:
+`DownloadedPackage/algo/bin/Lite_version/Cortex_M0/libalgobsec.a`
+
+Then copy the library into the project source as:
+`uThingVOC/Middlewares/Bosch/libalgobsec.a`
 
 ## Building
 
