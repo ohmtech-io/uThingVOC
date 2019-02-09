@@ -1,21 +1,24 @@
-# uThing::VOC
+# uThing::VOC Firmware
 
 ![uThingVOC](/img/uThingVOC-block-diagram.png)
 
 ### Air-Quality sensor USB dongle with configurable output format 
 
+**Notes:**
+* The hardware Schematics and design files can be found here: https://github.com/ohmtech-io/uThingVOC-PCB.git
+* The assembled boards can be obtained at the Tindie store: https://www.tindie.com/products/damancuso/uthingvoc/
+
 ## Toolchain
 
 1. Get the ARM-GCC compiler for your platform.
 
-    Although different versions of the ARM-GCC compiler may work correctly, the prototype was developed and tested using the *gcc-arm-none-eabi-8-2018-q4-mayor* version, available in the ARM website: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads.
+    Although different versions of the ARM-GCC compiler may work correctly, the prototype was developed and tested using the **gcc-arm-none-eabi-8-2018-q4-mayor** version, available in the ARM website: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads.
 
-2. Change the GCC_PATH path on the Makefile with your toolchain's location.
-    Alternatively, compile adding the **GCC_PATH** to the *make* command (`make GCC_PATH="/gcc-arm-path"`) or add it as environment variable.
+2. Change the **GCC_PATH** path on the Makefile with your toolchain's location.Alternatively, compile adding the GCC_PATH to the *make* command (`make GCC_PATH="/gcc-arm-path"`) or add it as environment variable.
 
 ## Bosch BSEC library
 
-The Bosch BSEC library is provided as a closed source binary file upon acceptance of a license agreement.
+The Bosch Sensortec BSEC library is provided as a closed source binary file upon acceptance of a license agreement.
 
 Therefore the user needs to read the license and download the library here:
 https://www.bosch-sensortec.com/bst/products/all_products/bsec
@@ -53,7 +56,7 @@ make flash
 
 *Note*: Different debug probes could be used (as the ones based on FT2232/OpenOcd or ST-Link).
 
-### Using USB-DFU
+### Using USB-DFU (Device Firmware Update)
 
 If the intention is to simply update the firmware, or just program a slightly modified version without the need for extensive debugging / testing, the MCU can be re-flashed via the USB port by using the on-board USB-DFU capability.
 
@@ -92,13 +95,22 @@ The programming process via USB requires two steps:
     ```    
     dfu-util -a 0 -D USBthingVOC.bin --dfuse-address 0x0800C000 -d 0483:df11
     ```
-     *Note:* In Linux, the dfu-util needs to be run as **root**, or a udev rule and permissions should be added.
+     *Note:* In Linux, the dfu-util may need to be run as **root**, or a udev rule and permissions should be added.
+
+     ![uThingVOCfront](/img/uThingVOC-parts-front.jpg)
+     ![uThingVOCback](/img/uThingVOC-parts-back.jpg)
+
+Finished board. Note the extra exposed GPIO pads: some expose ADC channels, UARTs or PWM outputs. Check the uThing::VOC or STM32F072CB datasheets for more info.
+
+Please let us know if you find this project interesting, you would like to see more features or just tell us for what you'll use it at info@ohmtech.io. For bug reports just open a new issue.
+
+If you like the project please share and follow us on [Tweeter](https://twitter.com/OhmTechIot) :)
 
 ------------------
 
-**MIT License**
+**License**
 
-** Copyright (c) 2019 Daniel Mancuso - OhmTech.io **
+**Copyright (c) 2019 Daniel Mancuso - OhmTech.io**
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
