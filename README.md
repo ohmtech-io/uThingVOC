@@ -108,7 +108,7 @@ If you like the project please share and follow us on [Tweeter](https://twitter.
 
 ------------------
 
-**License**
+**MIT License**
 
 **Copyright (c) 2019 Daniel Mancuso - OhmTech.io**
 
