@@ -17,8 +17,11 @@ typedef struct _configs_t {
 	uint8_t		humEnabled	  :1;
 	uint8_t		pressEnabled  :1;
 	outFormat_t	format;
+	char 		serialNumberStr[17];
 } configs_t; 
 
 void processChar(uint8_t input);
 
 int uprintf(const char *format, ...);
+
+void initConfig(void);

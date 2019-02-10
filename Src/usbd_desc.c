@@ -53,7 +53,8 @@
 #include "usbd_conf.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "thConfig.h"
+extern configs_t thConfig;
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -109,19 +110,7 @@
   */
 
 /* USER CODE BEGIN 0 */
-/* String hash function */
 
-/*Robert Jenkins' 32 bit integer hash function*/
-uint32_t hash32(uint32_t a)
-{
-   a = (a+0x7ed55d16) + (a<<12);
-   a = (a^0xc761c23c) ^ (a>>19);
-   a = (a+0x165667b1) + (a<<5);
-   a = (a+0xd3a2646c) ^ (a<<9);
-   a = (a+0xfd7046c5) + (a<<3);
-   a = (a^0xb55a4f09) ^ (a>>16);
-   return a;
-}
 /* USER CODE END 0 */
 
 /** @defgroup USBD_DESC_Private_Macros USBD_DESC_Private_Macros
@@ -302,24 +291,14 @@ uint8_t * USBD_FS_ManufacturerStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *l
   */
 uint8_t * USBD_FS_SerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 {
-  char USBD_SERIALNUMBER[17];
-  uint32_t UID0, UID1;
-  /*HAL_GetUIDw0: UID[31:0]: X and Y coordinates on the wafer expressed in BCD format
-    HAL_GetUIDw1: Bits 31:8 UID[63:40] : LOT_NUM[23:0] - Lot number (ASCII encoded)
-                  Bits 7:0  UID[39:32] : WAF_NUM[7:0]  - Wafer number (8-bit unsigned number)
-  */ 
-  UID0 = HAL_GetUIDw0();  
-  UID1 = HAL_GetUIDw1();
-
-  snprintf(USBD_SERIALNUMBER, 17, "%lX%lX\n", hash32(UID1), hash32(UID0));
 
   if(speed == USBD_SPEED_HIGH)
   {
-    USBD_GetString((uint8_t *)USBD_SERIALNUMBER, USBD_StrDesc, length);
+    USBD_GetString((uint8_t *)thConfig.serialNumberStr, USBD_StrDesc, length);
   }
   else
   {
-    USBD_GetString((uint8_t *)USBD_SERIALNUMBER, USBD_StrDesc, length);
+    USBD_GetString((uint8_t *)thConfig.serialNumberStr, USBD_StrDesc, length);
   }
   return USBD_StrDesc;
 }

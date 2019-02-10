@@ -57,6 +57,9 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+  /* Obtain serial number */
+  initConfig(); 
+
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C2_Init();

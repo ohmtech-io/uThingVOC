@@ -30,10 +30,24 @@ static const char *PERIOD_STRING[] = {
     "1 hour"  /*6*/
 };
 
-// #define uprintf printf
-//CDC_Transmit_FS(Buf, sizeof(Buf));
+static uint32_t hash32(uint32_t a);
 
-char outBuffer[200];
+char outBuffer[1024];
+
+/* Obtain the serial number from the MCU UID */
+void initConfig(void)
+{
+	uint32_t UID0, UID1;
+  	/*	HAL_GetUIDw0: UID[31:0]: X and Y coordinates on the wafer expressed in BCD format
+    	HAL_GetUIDw1: Bits 31:8 UID[63:40] : LOT_NUM[23:0] - Lot number (ASCII encoded)
+        	          Bits 7:0  UID[39:32] : WAF_NUM[7:0]  - Wafer number (8-bit unsigned number)
+  	*/ 
+	UID0 = HAL_GetUIDw0();  
+	UID1 = HAL_GetUIDw1();
+
+	snprintf(thConfig.serialNumberStr, 17, "%lX%lX\n", hash32(UID1), hash32(UID0));
+}
+
 
 int uprintf(const char *format, ...)
 {
@@ -62,8 +76,9 @@ void showConfig()
 	uint32_t timestamp = HAL_GetTick();
 	uprintf("\n\r-------------------------------------------------------- \
 			\n\r***  Status: \
-			\n\r Samplig period = %s, Format = %s, Uptime = %lu ms \
+			\n\r Serial #: %s, Samplig period = %s, Format = %s, Uptime = %lu ms \
 			\n\r-------------------------------------------------------- \n\r", 
+			thConfig.serialNumberStr,
 			PERIOD_STRING[thConfig.samplingPeriodIdx], 
 			FORMAT_STRING[thConfig.format], 
 			timestamp);
@@ -213,6 +228,20 @@ void processChar(uint8_t input)
 		}
 
 	}
-}					
+}		
+
+
+/*Robert Jenkins' 32 bit integer hash function*/
+static uint32_t hash32(uint32_t a)
+{
+   a = (a+0x7ed55d16) + (a<<12);
+   a = (a^0xc761c23c) ^ (a>>19);
+   a = (a+0x165667b1) + (a<<5);
+   a = (a+0xd3a2646c) ^ (a<<9);
+   a = (a+0xfd7046c5) + (a<<3);
+   a = (a^0xb55a4f09) ^ (a>>16);
+   return a;
+}
+
 
 
