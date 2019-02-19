@@ -45,7 +45,7 @@ void initConfig(void)
 	UID0 = HAL_GetUIDw0();  
 	UID1 = HAL_GetUIDw1();
 
-	snprintf(thConfig.serialNumberStr, 17, "%lX%lX\n", hash32(UID1), hash32(UID0));
+	snprintf(thConfig.serialNumberStr, 17, "%lX%lX", hash32(UID1), hash32(UID0));
 }
 
 

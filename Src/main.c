@@ -9,6 +9,8 @@
 
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 
+#define TEMP_OFFSET 6.0f
+
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c2;
 
@@ -70,7 +72,7 @@ int main(void)
   WatchdogInit(&watchdogHandle);
 
   UartLog("Initializing BSEC and BME680...");
-  ret = bsec_iot_init(BSEC_SAMPLE_RATE_LP, 5.0f, user_i2c_write, user_i2c_read, user_delay_ms, NULL, NULL);
+  ret = bsec_iot_init(BSEC_SAMPLE_RATE_LP, TEMP_OFFSET, user_i2c_write, user_i2c_read, user_delay_ms, NULL, NULL);
 
   if (ret.bme680_status)
   {
@@ -113,7 +115,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temp
             iaq_accuracy);  
         break;
       case CSV:
-        sprintf(outputString, "%.2f, %.2f, %.2f, %6.0f, %.1f, %u\n\r",
+        sprintf(outputString, "%.2f, %.2f, %.2f, %6.0f, %.1f, %u\r\n",
             temperature,
             pressure/100, 
             humidity, 
