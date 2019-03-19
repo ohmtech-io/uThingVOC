@@ -10,7 +10,7 @@ TARGET = USBthingVOC
 DEBUG := 0
 # optimization (s=size, g=debug)
 # OPT = -Os
-OPT = -Os
+OPT = -Og
 
 #######################################
 # paths
@@ -58,7 +58,8 @@ Drivers/BME680_driver/bme680.c \
 Drivers/BME680_driver/SelfTest/bme680_selftest.c \
 Src/syscalls.c \
 Src/thConfig.c \
-Src/thBsec.c 
+Src/thBsec.c \
+Middlewares/Bosch/bsec_serialized_configurations_iaq.c
 
 
 # ASM sources
