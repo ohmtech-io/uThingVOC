@@ -38,7 +38,7 @@ Then copy the library into the project source as:
 make clean && make
 ```
 
-*Note:* There is a macro which enable/disable printing some debug information (using it as *UartLog()*) often useful for development while monitoring the USART1 TX pad on the board bottom side. To enable it, compile with:
+*Note:* There is a macro which enable/disable printing debug information (using it as *UartLog()*) often useful for development while monitoring the USART1 TX pad on the board bottom side. To enable it, compile with:
 
 ```
 make DEBUG=1

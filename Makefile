@@ -10,7 +10,7 @@ TARGET = USBthingVOC
 DEBUG := 0
 # optimization (s=size, g=debug)
 # OPT = -Os
-OPT = -Og
+OPT = -Os
 
 #######################################
 # paths
@@ -55,9 +55,11 @@ Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_uart.c \
 Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_uart_ex.c \
 Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_iwdg.c \
 Drivers/BME680_driver/bme680.c \
+Drivers/BME680_driver/SelfTest/bme680_selftest.c \
 Src/syscalls.c \
 Src/thConfig.c \
-Src/thBsec.c
+Src/thBsec.c 
+
 
 # ASM sources
 ASM_SOURCES =  \
@@ -126,6 +128,7 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Device/ST/STM32F0xx/Include \
 -IDrivers/CMSIS/Include \
 -IDrivers/BME680_driver \
+-IDrivers/BME680_driver/SelfTest \
 -IMiddlewares/Bosch
 
 # compile gcc flags

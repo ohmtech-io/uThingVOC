@@ -6,6 +6,7 @@
 #include "thConfig.h"
 #include "thBsec.h"
 #include "bsec_interface.h"
+#include "bme680_selftest.h"
 
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 
@@ -69,6 +70,22 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
 
+  /* Self-test */
+  int8_t res = gasSensorInit(&gas_sensor);
+  if (res == BME680_OK) {UartLog("BME680 initialized.");}
+    else                {UartLog("Error initializing the sensor, %d", res);}
+
+  res = bme680_self_test(&gas_sensor);
+  if (res == BME680_OK) {
+    UartLog("BME680: Self Test passed OK."); 
+  }
+  else {
+      UartLog("Error!!! Self Test FAILED! %d", res);
+      Error_Handler();
+  }
+
+  /**/
+
   WatchdogInit(&watchdogHandle);
 
   UartLog("Initializing BSEC and BME680...");
@@ -78,6 +95,7 @@ int main(void)
   {
       /* Could not intialize BME680 */
       UartLog("Error while initializing BME680!!!");
+      Error_Handler();
   }
   else 
   {
@@ -89,6 +107,7 @@ int main(void)
   {
       /* Could not intialize BSEC library */
       UartLog("Error while initializing BSEC library!!!");
+      Error_Handler();
   }
 
   /* Call to endless loop function which reads and processes data based on sensor settings */
