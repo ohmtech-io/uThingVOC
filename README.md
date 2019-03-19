@@ -25,9 +25,9 @@ https://www.bosch-sensortec.com/bst/products/all_products/bsec
 
 The initial revision of uThing::VOC uses the BSEC version v1.4.7.1 | Sept. 18th, 2018.
 
-After download, locate the appropriate version of the binary file for the **Lite** version.
+After download, locate the appropriate version of the binary file for the **Normal** version.
 The file can be found under the following path:
-`DownloadedPackage/algo/bin/Lite_version/Cortex_M0/libalgobsec.a`
+`DownloadedPackage/algo/bin/Normal_version/Cortex_M0/libalgobsec.a`
 
 Then copy the library into the project source as:
 `uThingVOC/Middlewares/Bosch/libalgobsec.a`
