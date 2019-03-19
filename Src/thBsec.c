@@ -104,16 +104,16 @@ return_values_init bsec_iot_init(float sample_rate, float temperature_offset, bm
         return ret;
     }
     
-    // /* Load library config, if available */
-    // bsec_config_len = config_load(bsec_config, sizeof(bsec_config));
-    // if (bsec_config_len != 0)
-    // {       
-    //     ret.bsec_status = bsec_set_configuration(bsec_config, bsec_config_len, work_buffer, sizeof(work_buffer));     
-    //     if (ret.bsec_status != BSEC_OK)
-    //     {
-    //         return ret;
-    //     }
-    // }
+    /* Load library config, if available */
+    bsec_config_len = config_load(bsec_config, sizeof(bsec_config));
+    if (bsec_config_len != 0)
+    {       
+        ret.bsec_status = bsec_set_configuration(bsec_config, bsec_config_len, work_buffer, sizeof(work_buffer));     
+        if (ret.bsec_status != BSEC_OK)
+        {
+            return ret;
+        }
+    }
     
     // /* Load previous library state, if available */
     // bsec_state_len = state_load(bsec_state, sizeof(bsec_state));

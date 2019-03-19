@@ -7,6 +7,7 @@
 #include "thBsec.h"
 #include "bsec_interface.h"
 #include "bme680_selftest.h"
+#include "bsec_serialized_configurations_iaq.h"
 
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 
@@ -37,10 +38,12 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temp
                   float gas, bsec_library_return_t bsec_status);
 int gasSensorInit(struct bme680_dev *gas_sensor);
 int gasSensorConfig(struct bme680_dev *gas_sensor);
+uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer);
 int64_t get_timestamp_us(void);
 int8_t user_i2c_read(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len);
 int8_t user_i2c_write(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len);
 void user_delay_ms(uint32_t period);
+
 
 struct bme680_dev gas_sensor;
 extern configs_t thConfig;
@@ -70,7 +73,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
 
-  /* Self-test */
+  /* Self-test, it takes ~ 12 seconds */
   int8_t res = gasSensorInit(&gas_sensor);
   if (res == BME680_OK) {UartLog("BME680 initialized.");}
     else                {UartLog("Error initializing the sensor, %d", res);}
@@ -89,16 +92,14 @@ int main(void)
   WatchdogInit(&watchdogHandle);
 
   UartLog("Initializing BSEC and BME680...");
-  ret = bsec_iot_init(BSEC_SAMPLE_RATE_LP, TEMP_OFFSET, user_i2c_write, user_i2c_read, user_delay_ms, NULL, NULL);
+  ret = bsec_iot_init(BSEC_SAMPLE_RATE_LP, TEMP_OFFSET, user_i2c_write, user_i2c_read, user_delay_ms, NULL, config_load);
 
   if (ret.bme680_status)
   {
       /* Could not intialize BME680 */
       UartLog("Error while initializing BME680!!!");
       Error_Handler();
-  }
-  else 
-  {
+  } else {
      UartLog("Sensor and BSEC ready.");
      HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
   }
@@ -108,10 +109,10 @@ int main(void)
       /* Could not intialize BSEC library */
       UartLog("Error while initializing BSEC library!!!");
       Error_Handler();
+  } else {
+      /* Call to endless loop function which reads and processes data based on sensor settings */
+      bsec_iot_loop(user_delay_ms, get_timestamp_us, output_ready, NULL, 10000);
   }
-
-  /* Call to endless loop function which reads and processes data based on sensor settings */
-  bsec_iot_loop(user_delay_ms, get_timestamp_us, output_ready, NULL, 10000);
  
   return -1; /*This should never be reached*/
 }
@@ -203,6 +204,18 @@ int gasSensorConfig(struct bme680_dev *gas_sensor)
   res += bme680_set_sensor_mode(gas_sensor); 
 
   return res;
+}
+
+uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer)
+{
+    // ...
+    // Load a library config from non-volatile memory, if available.
+    //
+    // Return zero if loading was unsuccessful or no config was available,
+    // otherwise return length of loaded config string.
+    // ...
+    memcpy(config_buffer, bsec_config_iaq, sizeof(bsec_config_iaq));
+    return sizeof(bsec_config_iaq);
 }
 
 int8_t user_i2c_read(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len)
