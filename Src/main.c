@@ -32,10 +32,10 @@ static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void WatchdogInit(IWDG_HandleTypeDef *watchdogHandle);
 
-
 void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temperature, 
-                  float humidity, float pressure, float raw_temperature, float raw_humidity, 
-                  float gas, bsec_library_return_t bsec_status);
+                  float humidity, float pressure, float raw_temperature, float raw_humidity,
+                  float gas, bsec_library_return_t bsec_status, float static_iaq, 
+                  float co2_equivalent, float breath_voc_equivalent);
 int gasSensorInit(struct bme680_dev *gas_sensor);
 int gasSensorConfig(struct bme680_dev *gas_sensor);
 uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer);
@@ -120,7 +120,7 @@ int main(void)
 /*--------------------------------------------*/
 void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temperature, 
                   float humidity, float pressure, float raw_temperature, float raw_humidity,
-                  float gas, bsec_library_return_t bsec_status)
+                  float gas, bsec_library_return_t bsec_status, float static_iaq, float co2_equivalent, float breath_voc_equivalent)
 {
       iaqAccuracy = iaq_accuracy;
       /* the output will be finally printed by the timer handler... */

@@ -10,7 +10,7 @@ TARGET = USBthingVOC
 DEBUG := 0
 # optimization (s=size, g=debug)
 # OPT = -Os
-OPT = -Og
+OPT = -Os
 
 #######################################
 # paths

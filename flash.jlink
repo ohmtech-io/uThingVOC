@@ -1,4 +1,4 @@
-speed 500
+speed 4000
 device STM32F072CB
 si 1
 con
