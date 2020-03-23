@@ -5,6 +5,7 @@
 #include "thConfig.h"
 #include "main.h" //for the UART_LOG
 #include "usbd_cdc_if.h"
+#include "version.h"
 
 configs_t thConfig = { .format = JSON,
 					 .samplingPeriodIdx = 0,
@@ -72,17 +73,20 @@ int uprintf(const char *format, ...)
 	return len;
 }
 
-void showConfig()
+static void showConfig()
 {
 	uint32_t timestamp = HAL_GetTick();
 	uprintf("\n\r-------------------------------------------------------- \
 			\n\r***  Status: \
-			\n\r Serial #: %s, Samplig period = %s, Format = %s, Uptime = %lu ms \
+			\n\r Reporing period = %s, Format = %s, Uptime = %lu ms, Serial #: %s, FW v%d.%d.%d\
 			\n\r-------------------------------------------------------- \n\r", 
-			thConfig.serialNumberStr,
 			PERIOD_STRING[thConfig.samplingPeriodIdx], 
 			FORMAT_STRING[thConfig.format], 
-			timestamp);
+			timestamp,
+			thConfig.serialNumberStr,
+			VERSION_MAJOR,
+			VERSION_MINOR,
+			VERSION_PATCH);
 }	
 
 void printPeriod()
@@ -91,20 +95,6 @@ void printPeriod()
 			PERIOD_STRING[thConfig.samplingPeriodIdx]);
 }
 
-void printHelp()
-{
-	uprintf("\n\r------------------------------------------------------- \n\r");
-	uprintf("*********** Available commands: *********************** \n\r");
-	uprintf("[h]: Show this help \n\r");
-	uprintf("--- Output format:\n\r");
-	uprintf("[j]: JSON (default)\n\r");
-	uprintf("[m]: Human readable\n\r");
-	uprintf("[b]: Binary \n\r");
-	uprintf("---- \n\r");
-	uprintf("[p]: Set sampling period in milliseconds (default: 1000)\n\r");
-	uprintf("[s]: Start / stop sensors sampling\n\r");
-	uprintf("------------------------------------------------------- \n\r");
-}
 
 void processChar(uint8_t input)
 {
@@ -117,11 +107,6 @@ void processChar(uint8_t input)
 	{	
 		switch (toupper(input))
 		{
-			// case 'H':
-			// case '?':
-			// 	printHelp();
-			// 	showConfig();
-			// 	break;
 			case 'J':
 				thConfig.format = JSON;
 				uprintf("\n\r*** Config: Set output format to JSON.\n\r");

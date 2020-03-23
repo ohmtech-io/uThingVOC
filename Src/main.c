@@ -129,7 +129,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temp
       /* the output will be finally printed by the timer handler... */
       switch (thConfig.format){
       case JSON:
-        sprintf(outputString, "{\"temperature\": %.2f, \"pressure\": %.2f, \"humidity\": %.2f, \"gasResistance\": %6.0f, \"IAQ\": %.1f, \"iaqAccuracy\": %u, \"eqCO2\": %.2f, \"eqBreathVOC\": %.3f}\r\n", 
+        sprintf(outputString, "{\"temperature\": %.2f, \"pressure\": %.2f, \"humidity\": %.2f, \"gasResistance\": %6.0f, \"IAQ\": %.1f, \"iaqAccuracy\": %u, \"eqCO2\": %.2f, \"eqBreathVOC\": %.2f}\r\n", 
             temperature,
             pressure/100, 
             humidity, 
@@ -140,7 +140,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temp
             breath_voc_equivalent);  
         break;
       case CSV:
-        sprintf(outputString, "%.2f, %.2f, %.2f, %6.0f, %.1f, %u, %.1f, %.3f,\r\n",
+        sprintf(outputString, "%.2f, %.2f, %.2f, %6.0f, %.1f, %u, %.1f, %.2f,\r\n",
             temperature,
             pressure/100, 
             humidity, 
@@ -151,7 +151,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temp
             breath_voc_equivalent);  
         break;
       case HUMAN:
-        sprintf(outputString, "Temperature: %.2f C, Pressure: %.2f hPa, Humidity: %.2f %%rH, Gas resistance: %6.0f ohms, IAQ: %.1f, IAQ Accuracy: %u, CO2equivalent: %.1f, Breath VOC equivalent: % .3f\r\n", 
+        sprintf(outputString, "Temperature: %.2f C, Pressure: %.2f hPa, Humidity: %.2f %%rH, Gas resistance: %6.0f ohms, IAQ: %.1f, IAQ Accuracy: %u, CO2equivalent: %.1f, Breath VOC equivalent: % .2f\r\n", 
             temperature,
             pressure/100, 
             humidity, 
