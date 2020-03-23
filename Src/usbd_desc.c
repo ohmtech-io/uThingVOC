@@ -92,11 +92,13 @@ extern configs_t thConfig;
   * @{
   */
 
+// #define USBD_VID     0x1209 //pid.codes
 #define USBD_VID     1155
 #define USBD_LANGID_STRING     1033
-#define USBD_MANUFACTURER_STRING     "STMicroelectronics"
+#define USBD_MANUFACTURER_STRING     "OhmTech.io"
 #define USBD_PID_FS     22336
-#define USBD_PRODUCT_STRING_FS     "VOCsensor"
+// #define USBD_PID_FS     0xCCCC //pid.codes(unused)
+#define USBD_PRODUCT_STRING_FS     "uThingVOC"
 // #define USBD_SERIALNUMBER_STRING_FS     "1A"
 #define USBD_CONFIGURATION_STRING_FS     "CDC Config"
 #define USBD_INTERFACE_STRING_FS     "CDC Interface"

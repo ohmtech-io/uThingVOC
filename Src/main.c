@@ -52,6 +52,7 @@ static char outputString[200];
 static uint16_t secCount = 0;
 
 uint8_t iaqAccuracy = 0;
+bsec_library_return_t bsec_status = BSEC_E_CONFIG_EMPTY;
 
 int main(void)
 {
@@ -120,9 +121,11 @@ int main(void)
 /*--------------------------------------------*/
 void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temperature, 
                   float humidity, float pressure, float raw_temperature, float raw_humidity,
-                  float gas, bsec_library_return_t bsec_status, float static_iaq, float co2_equivalent, float breath_voc_equivalent)
+                  float gas, bsec_library_return_t _bsec_status, float static_iaq, float co2_equivalent, float breath_voc_equivalent)
 {
       iaqAccuracy = iaq_accuracy;
+      bsec_status = _bsec_status;
+
       /* the output will be finally printed by the timer handler... */
       switch (thConfig.format){
       case JSON:
@@ -469,7 +472,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
   }
 
-  if (++secCount >= thConfig.samplingPeriod)
+  if (++secCount >= thConfig.samplingPeriod && bsec_status == BSEC_OK)
   {
     secCount = 0;
     uprintf(outputString);

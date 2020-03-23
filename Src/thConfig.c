@@ -58,7 +58,8 @@ int uprintf(const char *format, ...)
 	int len = vsprintf(outBuffer, format, arguments);
 	// int len = snprintf(outBuffer, 100, format, arguments);
 	// UartLog("len: %i, outBuffer: %s", len, outBuffer);
-	printf("%s", outBuffer);
+	
+	// printf("%s", outBuffer);
 	
 	va_end(arguments);
 	
@@ -108,14 +109,12 @@ void printHelp()
 void processChar(uint8_t input)
 {
 	static uint8_t receivingNumber = 0, digit = 0, dbuffer[10];
-
-	// UartLog("received char: %c", input);
-
+	// UartLog("RX: %c", input);
+	/* Don't process if they come too often, most of Linux consoles have "echo" enabled by default.
+		This cause the enpoint to be flooded with the responses from here until you open the console
+		with a termial app (screen, getty) or disable the echo with "stty -F /dev/ttyACM0 -echo"*/
 	if (!receivingNumber)
-	{
-		//Echo the received character
-		// uprintf((char *)&input); 
-		
+	{	
 		switch (toupper(input))
 		{
 			// case 'H':
@@ -140,11 +139,6 @@ void processChar(uint8_t input)
 			// 	thConfig.format = BINARY;
 			// 	uprintf("\n\rConfig: Set output format to Binary.\n\r");
 			// 	break;		
-			// case 'P':
-			// 	receivingNumber = 1;
-			// 	uprintf("\n\rIntroduce sampling period (min 100 ms): ");
-			// 	break;
-
 			case 'S':
 				showConfig();
 				break;
@@ -231,7 +225,7 @@ void processChar(uint8_t input)
 }		
 
 
-/*Robert Jenkins' 32 bit integer hash function*/
+/* Robert Jenkins' 32 bit integer hash function */
 static uint32_t hash32(uint32_t a)
 {
    a = (a+0x7ed55d16) + (a<<12);
