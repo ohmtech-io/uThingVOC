@@ -4,3 +4,4 @@
 *.log
 .gdb_history
 *.map
+_temp

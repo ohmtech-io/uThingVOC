@@ -23,7 +23,7 @@ The Bosch Sensortec BSEC library is provided as a closed source binary file upon
 Therefore the user needs to read the license and download the library here:
 https://www.bosch-sensortec.com/bst/products/all_products/bsec
 
-The initial revision of uThing::VOC uses the BSEC version v1.4.7.1 | Sept. 18th, 2018.
+The actual revision of uThing::VOC uses the BSEC version v1.4.7.4 | June. 26th, 2019.
 
 After download, locate the appropriate version of the binary file for the **Normal** version.
 The file can be found under the following path:
