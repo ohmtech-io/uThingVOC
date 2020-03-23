@@ -133,7 +133,7 @@ void processChar(uint8_t input)
 			case 'C':
 				thConfig.format = CSV;
 				uprintf("\n\r*** Config: Set output format to CSV. \
-						\n\rFormat: [temperature], [pressure], [humitidy], [gasResistance], [IAQ], [accuracy]\n\r");
+						\n\rFormat: [temperature], [pressure], [humitidy], [gasResistance], [IAQ], [accuracy], [eqCO2], [eqBreathVOC]\n\r");
 				break;	
 			// case 'B':
 			// 	thConfig.format = BINARY;
