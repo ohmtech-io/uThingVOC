@@ -472,13 +472,19 @@ PUTCHAR_PROTOTYPE
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* Blink blue LED until BSEC give us a valid IAQ value, ~5 minutes */
-  if (iaqAccuracy == 0){  
-    HAL_GPIO_TogglePin(GPIOB, BLUE_LED_Pin);  
-  } 
-  else 
-  {
-    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
+  if (thConfig.ledEnabled){
+    if (iaqAccuracy == 0){  
+      HAL_GPIO_TogglePin(GPIOB, BLUE_LED_Pin);  
+    } 
+    else 
+    {
+      HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
+    }
+  } else {
+    /* Disable Blue LED */
+    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
   }
+
 
   if (++secCount >= thConfig.reportingPeriod && bsec_status == BSEC_OK)
   {

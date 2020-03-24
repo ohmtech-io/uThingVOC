@@ -5,6 +5,7 @@
 #include "thBsec.h"
 #include "main.h"
 #include "thConfig.h"
+extern configs_t thConfig;
 
 #define NUM_USED_OUTPUTS 10
 
@@ -464,9 +465,12 @@ void bsec_iot_loop(sleep_fct sleep, get_timestamp_us_fct get_timestamp_us, outpu
             n_samples = 0;
         }
 
-        HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 0);
-        HAL_Delay(75);
-        HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 1);
+        if (thConfig.ledEnabled){
+            HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 0);
+            HAL_Delay(75);
+            HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 1);
+        }
+
 
         /* Refresh IWDG: reload counter */
         HAL_IWDG_Refresh(&watchdogHandle);
