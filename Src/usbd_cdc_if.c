@@ -315,6 +315,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
   if (shellBuffer.newLine){
+    processVCPinput(); //<1us
     /* Buffer wasn't processed yet. We are not ready for new packages */
     return (USBD_BUSY);
   } else {
@@ -343,8 +344,12 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
     /* Prepare for the next reception */
     USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
     USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+
+    processVCPinput(); //<1us
     return (USBD_OK);
   }
+
+   
   /* USER CODE END 6 */
 }
 

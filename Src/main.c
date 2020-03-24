@@ -485,8 +485,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     secCount = 0;
     uprintf(outputString);
   }
-
-   processVCPinput(); //<1us
 }
 
 /**
