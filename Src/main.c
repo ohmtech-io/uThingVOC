@@ -480,11 +480,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
   }
 
-  if (++secCount >= thConfig.samplingPeriod && bsec_status == BSEC_OK)
+  if (++secCount >= thConfig.reportingPeriod && bsec_status == BSEC_OK)
   {
     secCount = 0;
     uprintf(outputString);
   }
+
+   processVCPinput(); //<1us
 }
 
 /**

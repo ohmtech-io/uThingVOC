@@ -19,8 +19,6 @@ static const uint32_t MAGIC_NUMBER = 0xDEADBEEF;
  */
 uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer)
 {
-	UartLog("Loading configuration from Flash (%ld bytes)...", n_buffer);
-
     // ...
     // Load a previous library state from non-volatile memory, if available.
     //
@@ -48,6 +46,8 @@ uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer)
 	for (int i=0; i < n_buffer; i += 4, ptr++, flashAddress += 4){   
 		*ptr = *(volatile uint32_t*)flashAddress;
 	}
+
+	UartLog("Configuration loaded from Flash (%ld bytes).", length);
 
 	return length;
 }
