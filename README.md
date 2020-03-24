@@ -110,7 +110,7 @@ If you like the project please share and follow us on [Tweeter](https://twitter.
 
 **MIT License**
 
-**Copyright (c) 2019 Daniel Mancuso - OhmTech.io**
+**Copyright (c) 2020 Daniel Mancuso - OhmTech.io**
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

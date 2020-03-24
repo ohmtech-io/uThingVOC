@@ -46,6 +46,8 @@ static const char *FORMAT_STRING[] = {
     "JSON", "HUMAN", "CSV", "BINARY",
 };
 
+static const char *HW_ID = { "uThing::VOC rev.A"};
+
 static const char *PERIOD_STRING[] = {
     "3 sec",  /*0*/
     "10 sec", 
@@ -62,8 +64,9 @@ static int processJson(const char *buffer);
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 static void jsonPrintStatus(void);
 static char toUpperCase(const char ch);
+static void jsonPrintDevInfo(void);
 
-#define outBufferSize 	1024
+#define outBufferSize 	512
 static char outBuffer[outBufferSize];
 shellBuffer_t shellBuffer;
 
@@ -136,9 +139,10 @@ static void showConfig()
 {
 	uint32_t timestamp = HAL_GetTick();
 	uprintf("\n\r-------------------------------------------------------- \
-			\n\r***  Status: \
+			\n\r***  Device: *\"%s\"* -- Status: \
 			\n\r Reporing period: %s, Format: %s, Temp.Offset: %2.2f C, Uptime: %lu ms, Serial #: %s, FW: v%d.%d.%d\
 			\n\r-------------------------------------------------------- \n\r", 
+			HW_ID,
 			PERIOD_STRING[thConfig.reportingPeriodIdx], 
 			FORMAT_STRING[thConfig.format], 
 			thConfig.temperatureOffset,
@@ -303,6 +307,11 @@ static int processJson(const char *buffer)
 	    	saveConfig(&thConfig);
 	    	i++;
 	    }
+	    else if (jsoneq(buffer, &tokens[i], "info") == 0) {
+	    	jsonPrintDevInfo();
+	    	return ret;
+	    }
+	    
 	}
 
 	jsonPrintStatus();
@@ -320,16 +329,21 @@ static char toUpperCase(const char ch)
 static void jsonPrintStatus(void)
 {
 	uint32_t timestamp = HAL_GetTick();
-	snprintf(outBuffer, outBufferSize, "{\"status\":{\"reportingPeriod\":%lu,\"format\":\"%s\",\"temperatureOffset:\":%2.1f,\"upTime\":%lu,\"serial\":\"%s\",\"firmware\":\"%d.%d.%d\"}}\r\n",  
+	uprintf("{\"status\":{\"reportingPeriod\":%lu,\"format\":\"%s\",\"temperatureOffset:\":%2.1f,\"upTime\":%lu}}\r\n",  
 				thConfig.reportingPeriod,
 				FORMAT_STRING[thConfig.format],
 				thConfig.temperatureOffset,
-				timestamp,
+				timestamp);
+}
+
+static void jsonPrintDevInfo(void)
+{
+	uprintf("{\"device\":\"%s\",\"serial\":\"%s\",\"firmware\":\"%d.%d.%d\"}\r\n",  
+				HW_ID,
 				thConfig.serialNumberStr,
 				VERSION_MAJOR,
 				VERSION_MINOR,
 				VERSION_PATCH);
-	uprintf(outBuffer);
 }
 
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s) 
