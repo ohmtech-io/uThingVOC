@@ -8,6 +8,7 @@
 #include "bsec_interface.h"
 #include "bme680_selftest.h"
 #include "bsec_serialized_configurations_iaq.h"
+#include "flashSave.h"
 
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 
@@ -93,7 +94,7 @@ int main(void)
   WatchdogInit(&watchdogHandle);
 
   UartLog("Initializing BSEC and BME680...");
-  ret = bsec_iot_init(BSEC_SAMPLE_RATE_LP, TEMP_OFFSET, user_i2c_write, user_i2c_read, user_delay_ms, NULL, config_load);
+  ret = bsec_iot_init(BSEC_SAMPLE_RATE_LP, TEMP_OFFSET, user_i2c_write, user_i2c_read, user_delay_ms, state_load, config_load);
 
   if (ret.bme680_status)
   {
@@ -112,7 +113,9 @@ int main(void)
       Error_Handler();
   } else {
       /* Call to endless loop function which reads and processes data based on sensor settings */
-      bsec_iot_loop(user_delay_ms, get_timestamp_us, output_ready, NULL, 10000);
+      /* state is saved every 24 hours (24*3600 / 3) */
+      bsec_iot_loop(user_delay_ms, get_timestamp_us, output_ready, state_save, 10);
+      // bsec_iot_loop(user_delay_ms, get_timestamp_us, output_ready, state_save, 28800);
   }
  
   return -1; /*This should never be reached*/

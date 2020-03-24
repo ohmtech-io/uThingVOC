@@ -59,8 +59,8 @@ Drivers/BME680_driver/SelfTest/bme680_selftest.c \
 Src/syscalls.c \
 Src/thConfig.c \
 Src/thBsec.c \
-Middlewares/Bosch/bsec_serialized_configurations_iaq.c
-
+Middlewares/Bosch/bsec_serialized_configurations_iaq.c \
+Src/flashSave.c
 
 # ASM sources
 ASM_SOURCES =  \
