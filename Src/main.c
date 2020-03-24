@@ -114,8 +114,7 @@ int main(void)
   } else {
       /* Call to endless loop function which reads and processes data based on sensor settings */
       /* state is saved every 24 hours (24*3600 / 3) */
-      bsec_iot_loop(user_delay_ms, get_timestamp_us, output_ready, state_save, 10);
-      // bsec_iot_loop(user_delay_ms, get_timestamp_us, output_ready, state_save, 28800);
+      bsec_iot_loop(user_delay_ms, get_timestamp_us, output_ready, state_save, 28800);
   }
  
   return -1; /*This should never be reached*/
