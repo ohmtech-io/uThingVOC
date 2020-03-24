@@ -30,15 +30,15 @@
 #include "usbd_cdc_if.h"
 #include "version.h"
 #include "jsmn.h"
+#include "flashSave.h"
+
+
 
 configs_t thConfig = { .format = JSON,
 					 .reportingPeriodIdx = 0,
-					 .reportingPeriod = 3, /*default*/
-					 .gasResEnabled  = true,
-					 .tempEnabled 	 = true,
-					 .humEnabled 	 = true,
-					 .pressEnabled 	 = true,
-					 .ledEnabled	 = true,
+					 .reportingPeriod 	 = 3, /*default*/
+					 .ledEnabled		 = true,
+					 .temperatureOffset  = 0,
 					};
 
 
@@ -80,6 +80,9 @@ void initConfig(void)
 	UID1 = HAL_GetUIDw1();
 
 	snprintf(thConfig.serialNumberStr, 17, "%lX%lX", hash32(UID1), hash32(UID0));
+
+	/* Load config from Flash if available, otherwise keep default*/
+	loadConfig(&thConfig);
 }
 
 
@@ -134,10 +137,11 @@ static void showConfig()
 	uint32_t timestamp = HAL_GetTick();
 	uprintf("\n\r-------------------------------------------------------- \
 			\n\r***  Status: \
-			\n\r Reporing period: %s, Format: %s, Uptime: %lu ms, Serial #: %s, FW: v%d.%d.%d\
+			\n\r Reporing period: %s, Format: %s, Temp.Offset: %2.2f C, Uptime: %lu ms, Serial #: %s, FW: v%d.%d.%d\
 			\n\r-------------------------------------------------------- \n\r", 
 			PERIOD_STRING[thConfig.reportingPeriodIdx], 
 			FORMAT_STRING[thConfig.format], 
+			thConfig.temperatureOffset,
 			timestamp,
 			thConfig.serialNumberStr,
 			VERSION_MAJOR,
@@ -285,6 +289,20 @@ static int processJson(const char *buffer)
 	    		thConfig.reportingPeriod = value; 
 	    	i++;
 	    }
+	    else if (jsoneq(buffer, &tokens[i], "temperatureOffset") == 0) {
+	    	const char* start = buffer + tokens[i + 1].start;
+	    	float value = strtof(start, NULL); 
+
+	    	if (value >= -15.0f && value <= 15.0f){ 
+	    		thConfig.temperatureOffset = value; 
+	    	}
+	    	i++;
+	    }
+	    else if (jsoneq(buffer, &tokens[i], "saveConfig") == 0) {
+	    	/* store thConfig in Flash*/
+	    	saveConfig(&thConfig);
+	    	i++;
+	    }
 	}
 
 	jsonPrintStatus();
@@ -302,9 +320,10 @@ static char toUpperCase(const char ch)
 static void jsonPrintStatus(void)
 {
 	uint32_t timestamp = HAL_GetTick();
-	snprintf(outBuffer, outBufferSize, "{\"status\":{\"reportingPeriod\":%lu,\"format\":\"%s\",\"upTime\":%lu,\"serial\":\"%s\",\"firmware\":\"%d.%d.%d\"}}\r\n",  
+	snprintf(outBuffer, outBufferSize, "{\"status\":{\"reportingPeriod\":%lu,\"format\":\"%s\",\"temperatureOffset:\":%2.1f,\"upTime\":%lu,\"serial\":\"%s\",\"firmware\":\"%d.%d.%d\"}}\r\n",  
 				thConfig.reportingPeriod,
 				FORMAT_STRING[thConfig.format],
+				thConfig.temperatureOffset,
 				timestamp,
 				thConfig.serialNumberStr,
 				VERSION_MAJOR,
@@ -312,10 +331,6 @@ static void jsonPrintStatus(void)
 				VERSION_PATCH);
 	uprintf(outBuffer);
 }
-
-			
-			
-
 
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s) 
 {

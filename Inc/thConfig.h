@@ -32,17 +32,14 @@ typedef enum {
 	BINARY	= 3
 } outFormat_t;
 
-
+#pragma pack ( 1 ) 
 typedef struct _configs_t {
 	uint8_t		reportingPeriodIdx;
 	uint32_t	reportingPeriod; //ms
-	bool		gasResEnabled :1;
-	bool		tempEnabled	  :1;
-	bool		humEnabled	  :1;
-	bool		pressEnabled  :1;
-	bool		ledEnabled	  :1;
+	bool		ledEnabled;
 	outFormat_t	format;
 	char 		serialNumberStr[17];
+	float		temperatureOffset;	
 } configs_t; 
 
 typedef struct shellBuffer_t {

@@ -23,8 +23,12 @@
 ****************************************************************************/
 #pragma once
 
+#include "thConfig.h"
+
 uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer);
 void state_save(const uint8_t *state_buffer, uint32_t length);
+int loadConfig(configs_t *config);
+int saveConfig(configs_t *config);
 
 /* Base address of the Flash sectors */
 #define ADDR_FLASH_PAGE_0     ((uint32_t)0x08000000) /* Base @ of Page 0, 2 Kbytes */

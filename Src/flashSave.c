@@ -24,11 +24,14 @@
 #include <stdint.h>
 #include "main.h"
 #include "flashSave.h"
+#include "thConfig.h"
 
 extern IWDG_HandleTypeDef   watchdogHandle;
 
 /* Let's store the BME680 state data on the last 2KBs...*/
 static const uint32_t bsecPageStartAddress = ADDR_FLASH_PAGE_63; 
+/* thConfig storage */
+static const uint32_t configStartAddress = ADDR_FLASH_PAGE_62; 
 
 static const uint32_t MAGIC_NUMBER = 0xDEADBEEF;
 
@@ -70,7 +73,7 @@ uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer)
 		*ptr = *(volatile uint32_t*)flashAddress;
 	}
 
-	UartLog("Configuration loaded from Flash (%ld bytes).", length);
+	UartLog("BSEC Configuration loaded from Flash (%ld bytes).", length);
 
 	return length;
 }
@@ -89,7 +92,7 @@ void state_save(const uint8_t *state_buffer, uint32_t length)
 	static FLASH_EraseInitTypeDef EraseInitStruct;
 	uint32_t PageError;
 
-    UartLog("Storing configuration in Flash (%ld bytes)...", length);
+    UartLog("Storing BSEC configuration in Flash (%ld bytes)...", length);
 
     /* Refresh IWDG: let's kick the watchdog,
      we don't want to be reset during a Flash write procedure!! */
@@ -125,4 +128,67 @@ void state_save(const uint8_t *state_buffer, uint32_t length)
     }
 
     ret += HAL_FLASH_Lock();
+}
+
+//***********
+int loadConfig(configs_t *config)
+{
+	volatile uint32_t flashAddress = configStartAddress;
+
+	if (MAGIC_NUMBER != *(volatile uint32_t*)flashAddress){
+		/* first time (nothing saved yet) or error */
+		return 0;
+	}
+	flashAddress += 4;
+
+	uint8_t length = sizeof(configs_t);
+	volatile uint32_t *ptr = (volatile uint32_t* )config;
+
+	for (int i=0; i < length; i += 4, ptr++, flashAddress += 4){   
+		*ptr = *(volatile uint32_t*)flashAddress;
+	}
+
+	UartLog("uThing Configuration loaded from Flash (%d bytes).", length);
+
+	return length;
+}
+
+int saveConfig(configs_t *config)
+{
+	int ret = 0;
+	static FLASH_EraseInitTypeDef EraseInitStruct;
+	uint32_t PageError;
+
+    UartLog("Storing uThing configuration in Flash...");
+
+    /* Refresh IWDG: let's kick the watchdog,
+     we don't want to be reset during a Flash write procedure!! */
+    HAL_IWDG_Refresh(&watchdogHandle);
+
+    ret += HAL_FLASH_Unlock();
+    
+      /* Fill EraseInit structure*/
+  	EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
+  	EraseInitStruct.PageAddress = configStartAddress;
+  	EraseInitStruct.NbPages = 1;
+
+  	if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK){
+  		Error_Handler(); //oops!
+  	}
+
+    volatile uint32_t flashAddress = configStartAddress;
+     
+    /* Store the magic number */
+    ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, MAGIC_NUMBER);
+    flashAddress += 4;
+
+    /* Store now the state_buffer, 4 bytes at a time */
+    volatile uint32_t *pRecord = (uint32_t* )config; 
+
+    for (int i=0; i < sizeof(configs_t); i += 4, pRecord++, flashAddress += 4){
+        ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, *pRecord);
+    }
+
+    ret += HAL_FLASH_Lock();
+    return ret;
 }
