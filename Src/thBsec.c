@@ -4,6 +4,7 @@
 
 #include "thBsec.h"
 #include "main.h"
+#include "thConfig.h"
 
 #define NUM_USED_OUTPUTS 10
 

@@ -6,14 +6,16 @@
 #include "main.h" //for the UART_LOG
 #include "usbd_cdc_if.h"
 #include "version.h"
+#include "jsmn.h"
 
 configs_t thConfig = { .format = JSON,
-					 .samplingPeriodIdx = 0,
-					 .samplingPeriod = 3, /*default*/
-					 .gasResEnabled  = 1,
-					 .tempEnabled 	 = 1,
-					 .humEnabled 	 = 1,
-					 .pressEnabled 	 = 1,
+					 .reportingPeriodIdx = 0,
+					 .reportingPeriod = 3, /*default*/
+					 .gasResEnabled  = true,
+					 .tempEnabled 	 = true,
+					 .humEnabled 	 = true,
+					 .pressEnabled 	 = true,
+					 .ledEnabled	 = true,
 					};
 
 
@@ -32,8 +34,16 @@ static const char *PERIOD_STRING[] = {
 };
 
 static uint32_t hash32(uint32_t a);
+static void processChar(uint8_t input);
+static int processJson(const char *buffer);
+static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
+static void jsonPrintStatus(void);
+static char toUpperCase(const char ch);
 
-char outBuffer[1024];
+#define outBufferSize 	1024
+static char outBuffer[outBufferSize];
+shellBuffer_t shellBuffer;
+
 
 /* Obtain the serial number from the MCU UID */
 void initConfig(void)
@@ -73,14 +83,39 @@ int uprintf(const char *format, ...)
 	return len;
 }
 
+/* This has to be called periodically from the acquisition loop. 
+	If we do it from the USB_CDC_IF could be problematic because the callback comes from an IRQ...*/
+void processVCPinput(void)
+{
+	if (shellBuffer.newLine){
+		if (shellBuffer.idx == 2){
+			/* only 1 character, let's ignore longer strings (ModemManager or console echo issues) */
+			processChar(shellBuffer.Buf[0]);
+		} 
+		else if ((shellBuffer.idx > 2) && (shellBuffer.Buf[0] == '{')){
+			/* we have probably a JSON object */
+			processJson(shellBuffer.Buf);
+		}
+
+		/* trailing end of lines confuse the jsmn parser, let's clean after always..*/
+		for (int i = 0; i < sizeof(shellBuffer.Buf); ++i)
+		{
+			shellBuffer.Buf[i] = 0;
+		}
+		/* get ready for a new message */
+		shellBuffer.idx = 0;
+		shellBuffer.newLine = false;
+	} 
+}
+
 static void showConfig()
 {
 	uint32_t timestamp = HAL_GetTick();
 	uprintf("\n\r-------------------------------------------------------- \
 			\n\r***  Status: \
-			\n\r Reporing period = %s, Format = %s, Uptime = %lu ms, Serial #: %s, FW v%d.%d.%d\
+			\n\r Reporing period: %s, Format: %s, Uptime: %lu ms, Serial #: %s, FW: v%d.%d.%d\
 			\n\r-------------------------------------------------------- \n\r", 
-			PERIOD_STRING[thConfig.samplingPeriodIdx], 
+			PERIOD_STRING[thConfig.reportingPeriodIdx], 
 			FORMAT_STRING[thConfig.format], 
 			timestamp,
 			thConfig.serialNumberStr,
@@ -92,123 +127,183 @@ static void showConfig()
 void printPeriod()
 {
 	uprintf("\n\r***  Config: Sampling period set to %s.\n\r", 
-			PERIOD_STRING[thConfig.samplingPeriodIdx]);
+			PERIOD_STRING[thConfig.reportingPeriodIdx]);
 }
 
 
 void processChar(uint8_t input)
 {
-	static uint8_t receivingNumber = 0, digit = 0, dbuffer[10];
-	// UartLog("RX: %c", input);
-	/* Don't process if they come too often, most of Linux consoles have "echo" enabled by default.
-		This cause the enpoint to be flooded with the responses from here until you open the console
-		with a termial app (screen, getty) or disable the echo with "stty -F /dev/ttyACM0 -echo"*/
-	if (!receivingNumber)
-	{	
-		switch (toupper(input))
-		{
-			case 'J':
-				thConfig.format = JSON;
-				uprintf("\n\r*** Config: Set output format to JSON.\n\r");
-				break;
-			case 'M':
-				thConfig.format = HUMAN;
-				uprintf("\n\r*** Config: Set output format to Human Readable.\n\r");
-				break;	
-			case 'C':
-				thConfig.format = CSV;
-				uprintf("\n\r*** Config: Set output format to CSV. \
-						\n\rFormat: [temperature], [pressure], [humitidy], [gasResistance], [IAQ], [accuracy], [eqCO2], [eqBreathVOC]\n\r");
-				break;	
-			// case 'B':
-			// 	thConfig.format = BINARY;
-			// 	uprintf("\n\rConfig: Set output format to Binary.\n\r");
-			// 	break;		
-			case 'S':
-				showConfig();
-				break;
+	switch (toupper(input))
+	{
+		case 'J':
+			thConfig.format = JSON;
+			uprintf("\n\r*** Config: Set output format to JSON.\n\r");
+			break;
+		case 'M':
+			thConfig.format = HUMAN;
+			uprintf("\n\r*** Config: Set output format to Human Readable.\n\r");
+			break;	
+		case 'C':
+			thConfig.format = CSV;
+			uprintf("\n\r*** Config: Set output format to CSV. \
+					\n\rFormat: [temperature], [pressure], [humitidy], [gasResistance], [IAQ], [accuracy], [eqCO2], [eqBreathVOC]\n\r");
+			break;	
+		case 'D':
+			thConfig.ledEnabled = false;
+			uprintf("\n\rConfig: Disable LED\n\r");
+			break;		
+		case 'E':
+			thConfig.ledEnabled = true;
+			uprintf("\n\rConfig: Enable LED\n\r");
+			break;	
+		case 'S':
+			showConfig();
+			break;
+		case '1':
+			thConfig.reportingPeriodIdx = 0; //3s
+			thConfig.reportingPeriod = 3;
+			printPeriod();
+			break;
+		case '2':
+			thConfig.reportingPeriodIdx = 1; //10s
+			thConfig.reportingPeriod = 10;
+			printPeriod();
+			break;
+		case '3':
+			thConfig.reportingPeriodIdx = 2; //30s
+			thConfig.reportingPeriod = 30;
+			printPeriod();
+			break;
+		case '4':
+			thConfig.reportingPeriodIdx = 3; //1m
+			thConfig.reportingPeriod = 60;
+			printPeriod();
+			break;
+		case '5':
+			thConfig.reportingPeriodIdx = 4; //10m
+			thConfig.reportingPeriod = 600;
+			printPeriod();
+			break;
+		case '6':
+			thConfig.reportingPeriodIdx = 5; //30m
+			thConfig.reportingPeriod = 1800;
+			printPeriod();
+			break;
+		case '7':
+			thConfig.reportingPeriodIdx = 6; //1h
+			thConfig.reportingPeriod = 3600;
+			printPeriod();
+			break;
 
-			case '1':
-				thConfig.samplingPeriodIdx = 0; //3s
-				thConfig.samplingPeriod = 3;
-				printPeriod();
-				break;
-			case '2':
-				thConfig.samplingPeriodIdx = 1; //10s
-				thConfig.samplingPeriod = 10;
-				printPeriod();
-				break;
-			case '3':
-				thConfig.samplingPeriodIdx = 2; //30s
-				thConfig.samplingPeriod = 30;
-				printPeriod();
-				break;
-			case '4':
-				thConfig.samplingPeriodIdx = 3; //1m
-				thConfig.samplingPeriod = 60;
-				printPeriod();
-				break;
-			case '5':
-				thConfig.samplingPeriodIdx = 4; //10m
-				thConfig.samplingPeriod = 600;
-				printPeriod();
-				break;
-			case '6':
-				thConfig.samplingPeriodIdx = 5; //30m
-				thConfig.samplingPeriod = 1800;
-				printPeriod();
-				break;
-			case '7':
-				thConfig.samplingPeriodIdx = 6; //1h
-				thConfig.samplingPeriod = 3600;
-				printPeriod();
-				break;
-
-			default:
-				uprintf("\n\r------------------------------------------------------- \
-						\n\r***  Invalid option. \
-						\n\r Use:    [m] Human readable, [j] JSON, [c] CSV, [s] Show configuration, \
-						\n\r Period: [1] 3 sec, [2] 10 sec, [3] 30 sec, [4] 1 min, [5] 10 min, [6] 30 min, [7] 1 hour. \
-						\n\r-------------------------------------------------------- \n\r");
-		}
-	} else {
-		if (input>='0' && input<='9')
-		{
-			if (++digit < 9)
-			{
-				dbuffer[digit] = input;	
-			} else {
-				uprintf("\n\rERROR: too long. Introduce sampling period [ms]: ");	
-				digit = 0;
-			} 
-			
-		} 
-		else if (input == 0x08 && digit>0) /*backspace*/
-		{
-			uprintf((char *)0x08); //TODO: verify if it's possible and works in different consoles!
-			--digit;
-		}
-		else if (input == 0x0D) /*CR*/
-		{
-			++digit;
-			dbuffer[digit] = 0;
-			
-			uint32_t number = strtoul((char *)dbuffer, (char **)NULL, 10);
-			if (number < 100) 
-			{
-				uprintf("\n\rERROR: too small, using 100ms.\n\r");
-				number = 100;
-			}
-			
-			thConfig.samplingPeriod = number;
-			uprintf("\n\rConfig: sampling period = %lu ms.\n\r", number);
-
-			receivingNumber = 0;
-		}
-
+		default:
+			uprintf("\n\r------------------------------------------------------- \
+					\n\r***  Invalid option. \
+					\n\r Use:              [m] Human readable, [j] JSON, [c] CSV, [s] Status, [e/d] enable/disable LED\
+					\n\r Reporting Period: [1] 3 sec, [2] 10 sec, [3] 30 sec, [4] 1 min, [5] 10 min, [6] 30 min, [7] 1 hour. \
+					\n\r-------------------------------------------------------- \n\r");
 	}
 }		
 
+static int processJson(const char *buffer)
+{
+	jsmn_parser p;
+	jsmntok_t tokens[10]; /* We expect no more than 10 tokens */
+	char keyFirstChar = 0;
+
+	jsmn_init(&p);
+	int ret = jsmn_parse(&p, buffer, strlen(buffer), tokens,
+	             sizeof(tokens) / sizeof(tokens[0]));
+	
+	if (ret < 0) {
+		printf("Failed to parse JSON: %d\n\r", ret);
+		return 1;
+	}
+
+	/* Assume the top-level element is an object */
+	if (ret < 1 || tokens[0].type != JSMN_OBJECT) {
+		printf("Object expected\n\r");
+		return 1;
+	}
+
+ 	/* Loop over all keys of the root object */
+	for (int i = 1; i < ret; i++) {
+	    if (jsoneq(buffer, &tokens[i], "status") == 0) {
+	      /* reply with the status and finish */
+	    	jsonPrintStatus();
+	    	return ret;
+	    } 
+	    else if (jsoneq(buffer, &tokens[i], "led") == 0) {
+			keyFirstChar = buffer[tokens[i + 1].start];
+			
+			if (keyFirstChar == 't'){
+				/*true*/
+				thConfig.ledEnabled = true;
+			} else if (keyFirstChar == 'f'){
+			/*false*/
+				thConfig.ledEnabled = false;
+			}
+			i++;
+	    } 
+	    else if (jsoneq(buffer, &tokens[i], "format") == 0) {
+	    	keyFirstChar = buffer[tokens[i + 1].start];
+
+	    	if (toUpperCase(keyFirstChar) == 'C'){
+	    		thConfig.format = CSV;
+	    	} else if (toUpperCase(keyFirstChar) == 'J'){
+	    		thConfig.format = JSON;
+	    	} else if (toUpperCase(keyFirstChar) == 'H'){
+	    		thConfig.format = HUMAN;
+	    	}
+	    	i++;
+	    }
+	    else if (jsoneq(buffer, &tokens[i], "reportingPeriod") == 0) {
+	    	const char* start = buffer + tokens[i + 1].start;
+	    	uint32_t value = strtoul(start, NULL, 10);
+
+	    	if (value >= 1 && value <= 3600) 
+	    		thConfig.reportingPeriod = value; 
+	    	i++;
+	    }
+	}
+
+	jsonPrintStatus();
+	return ret;
+}
+
+static char toUpperCase(const char ch)
+{
+	if (ch >= 97 && ch <= 122){
+		return (ch-32);
+	}
+	else return ch;
+}
+
+static void jsonPrintStatus(void)
+{
+	uint32_t timestamp = HAL_GetTick();
+	snprintf(outBuffer, outBufferSize, "{\"status\":{\"reportingPeriod\":%lu,\"format\":\"%s\",\"upTime\":%lu,\"serial\":\"%s\",\"firmware\":\"%d.%d.%d\"}}\r\n",  
+				thConfig.reportingPeriod,
+				FORMAT_STRING[thConfig.format],
+				timestamp,
+				thConfig.serialNumberStr,
+				VERSION_MAJOR,
+				VERSION_MINOR,
+				VERSION_PATCH);
+	uprintf(outBuffer);
+}
+
+			
+			
+
+
+static int jsoneq(const char *json, jsmntok_t *tok, const char *s) 
+{
+  if (tok->type == JSMN_STRING && (int)strlen(s) == tok->end - tok->start &&
+      strncmp(json + tok->start, s, tok->end - tok->start) == 0) {
+    return 0;
+  }
+  return -1;
+}
 
 /* Robert Jenkins' 32 bit integer hash function */
 static uint32_t hash32(uint32_t a)

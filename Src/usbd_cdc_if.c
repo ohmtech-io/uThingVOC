@@ -93,8 +93,10 @@
 /* USER CODE BEGIN PRIVATE_DEFINES */
 /* Define size for the receive and transmit buffer over CDC */
 /* It's up to user to redefine and/or remove those define */
-#define APP_RX_DATA_SIZE  4
-#define APP_TX_DATA_SIZE  4
+#define APP_RX_DATA_SIZE  100
+#define APP_TX_DATA_SIZE  100
+
+extern shellBuffer_t shellBuffer;
 /* USER CODE END PRIVATE_DEFINES */
 
 /**
@@ -312,12 +314,37 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+  if (shellBuffer.newLine){
+    /* Buffer wasn't processed yet. We are not ready for new packages */
+    return (USBD_BUSY);
+  } else {
+    if (*Len == 1){
+      /* User is using a terminal (1 character per OUT transaction) */
+      uint8_t rxChar = Buf[0];
 
-  processChar(Buf[0]);
-  
-  return (USBD_OK);
+      if (rxChar == '\n' || rxChar == '\r'){
+        /* Some consoles send \r on ENTER, so let's take it as a line feed too */
+         shellBuffer.Buf[shellBuffer.idx++] = '\n';
+         shellBuffer.newLine = true;
+      } else if (rxChar == 127 || rxChar == 8){ /* DEL or BackSpace */
+        shellBuffer.idx--;
+      } else {
+        /* We just assume it's a printable character... */
+        shellBuffer.Buf[shellBuffer.idx++] = rxChar;
+      }
+    } else {
+      /* User is using directly the character device (cat or library), 
+        an entire string arrives */
+      memcpy(shellBuffer.Buf, Buf, *Len);
+      shellBuffer.idx = *Len;
+      shellBuffer.newLine = true;
+    }
+
+    /* Prepare for the next reception */
+    USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+    USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+    return (USBD_OK);
+  }
   /* USER CODE END 6 */
 }
 

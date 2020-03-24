@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
 	JSON 	= 0,
@@ -10,17 +11,25 @@ typedef enum {
 
 
 typedef struct _configs_t {
-	uint8_t		samplingPeriodIdx;
-	uint32_t	samplingPeriod; //ms
-	uint8_t		gasResEnabled :1;
-	uint8_t		tempEnabled	  :1;
-	uint8_t		humEnabled	  :1;
-	uint8_t		pressEnabled  :1;
+	uint8_t		reportingPeriodIdx;
+	uint32_t	reportingPeriod; //ms
+	bool		gasResEnabled :1;
+	bool		tempEnabled	  :1;
+	bool		humEnabled	  :1;
+	bool		pressEnabled  :1;
+	bool		ledEnabled	  :1;
 	outFormat_t	format;
 	char 		serialNumberStr[17];
 } configs_t; 
 
-void processChar(uint8_t input);
+typedef struct shellBuffer_t {
+	char Buf[100];
+	uint8_t idx;
+	bool newLine;
+} shellBuffer_t;
+
+
+void processVCPinput(void);
 
 int uprintf(const char *format, ...);
 
