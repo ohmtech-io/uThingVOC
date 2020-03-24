@@ -133,7 +133,8 @@ return_values_init bsec_iot_init(float sample_rate, float temperature_offset, bm
     }
     
     /* Set temperature offset */
-    bme680_temperature_offset_g = temperature_offset;
+    // bme680_temperature_offset_g = temperature_offset;
+    bme680_temperature_offset_g = temperature_offset + thConfig.temperatureOffset;
     
     /* Call to the function which sets the library with subscription information */
     ret.bsec_status = bme680_bsec_update_subscription(sample_rate);
