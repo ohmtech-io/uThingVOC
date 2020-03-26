@@ -338,7 +338,7 @@ static void jsonPrintStatus(void)
 
 static void jsonPrintDevInfo(void)
 {
-	uprintf("{\"device\":\"%s\",\"serial\":\"%s\",\"firmware\":\"%d.%d.%d\"}\r\n",  
+	uprintf("{\"info\":{\"device\":\"%s\",\"serial\":\"%s\",\"firmware\":\"%d.%d.%d\"}}\r\n",  
 				HW_ID,
 				thConfig.serialNumberStr,
 				VERSION_MAJOR,
