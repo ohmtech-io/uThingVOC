@@ -104,6 +104,7 @@ int main(void)
 
   res = bme680_self_test(&gas_sensor);
   if (res == BME680_OK) {
+    HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 1); /*Disable RED LED*/
     UartLog("BME680: Self Test passed OK."); 
   }
   else {
