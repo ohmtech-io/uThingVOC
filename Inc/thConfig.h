@@ -42,8 +42,10 @@ typedef struct _configs_t {
 	float		temperatureOffset;	
 } configs_t; 
 
+
+#define SHELL_BUFFER_LENGTH 256
 typedef struct shellBuffer_t {
-	char Buf[100];
+	char Buf[SHELL_BUFFER_LENGTH];
 	uint8_t idx;
 	bool newLine;
 } shellBuffer_t;

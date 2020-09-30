@@ -335,10 +335,21 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
       }
     } else {
       /* User is using directly the character device (cat or library), 
-        an entire string arrives */
-      memcpy(shellBuffer.Buf, Buf, *Len);
-      shellBuffer.idx = *Len;
-      shellBuffer.newLine = true;
+        an entire string arrives, but as the max. bulk lenght is 64 bytes,
+        the string can be split in several pagages.. */
+
+      /* avoid a buffer overflow */
+      if ((shellBuffer.idx + *Len) >= SHELL_BUFFER_LENGTH) {
+        /* too long to process, reset the buffer*/
+        shellBuffer.idx = 0;
+      } else {
+        memcpy(shellBuffer.Buf + shellBuffer.idx, Buf, *Len);  
+        shellBuffer.idx += *Len;
+
+        if (*Len < 64){
+          shellBuffer.newLine = true;
+        }
+      }
     }
 
     /* Prepare for the next reception */
