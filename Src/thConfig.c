@@ -236,8 +236,9 @@ void processChar(uint8_t input)
 static int processJson(const char *buffer)
 {
 	jsmn_parser p;
-	jsmntok_t tokens[10]; /* We expect no more than 10 tokens */
+	jsmntok_t tokens[20]; /* We expect no more than 20 tokens */
 	char keyFirstChar = 0;
+	bool saveConf = false;
 
 	jsmn_init(&p);
 	int ret = jsmn_parse(&p, buffer, strlen(buffer), tokens,
@@ -261,6 +262,10 @@ static int processJson(const char *buffer)
 	    	jsonPrintStatus();
 	    	return ret;
 	    } 
+	    else if (jsoneq(buffer, &tokens[i], "info") == 0) {
+	    	jsonPrintDevInfo();
+	    	return ret;
+	    }
 	    else if (jsoneq(buffer, &tokens[i], "led") == 0) {
 			keyFirstChar = buffer[tokens[i + 1].start];
 			
@@ -303,16 +308,13 @@ static int processJson(const char *buffer)
 	    	i++;
 	    }
 	    else if (jsoneq(buffer, &tokens[i], "saveConfig") == 0) {
-	    	/* store thConfig in Flash*/
-	    	saveConfig(&thConfig);
+	    	/* store thConfig in Flash after processing all keys...*/
+	    	saveConf = true;
 	    	i++;
 	    }
-	    else if (jsoneq(buffer, &tokens[i], "info") == 0) {
-	    	jsonPrintDevInfo();
-	    	return ret;
-	    }
-	    
 	}
+
+	if (saveConf) saveConfig(&thConfig);
 
 	jsonPrintStatus();
 	return ret;
@@ -329,7 +331,7 @@ static char toUpperCase(const char ch)
 static void jsonPrintStatus(void)
 {
 	uint32_t timestamp = HAL_GetTick();
-	uprintf("{\"status\":{\"reportingPeriod\":%lu,\"format\":\"%s\",\"temperatureOffset:\":%2.1f,\"upTime\":%lu}}\r\n",  
+	uprintf("{\"status\":{\"reportingPeriod\":%lu,\"format\":\"%s\",\"temperatureOffset\":%2.1f,\"upTime\":%lu}}\r\n",  
 				thConfig.reportingPeriod,
 				FORMAT_STRING[thConfig.format],
 				thConfig.temperatureOffset,
