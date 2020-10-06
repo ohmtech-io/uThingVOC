@@ -218,6 +218,15 @@ $(BUILD_DIR)/$(TARGET).dmp : $(BUILD_DIR)/$(TARGET).elf
 #######################################
 flash:
 	JLinkexe flash.jlink
+
+#######################################
+# Use dfu-util to program the device 
+# -- note on STM32L412: STM32L412 has an issue in the ROM boot loader.
+#dfu-util  (release v0.9) on OSX fails.
+#fix here: https://sourceforge.net/p/dfu-util/tickets/40/?limit=25&page=1#a5f8
+#######################################
+dfu:
+	dfu-util -a 0 -D $(BUILD_DIR)/$(TARGET).bin  --dfuse-address 0x08000000:leave -d 0483:df11	
 #######################################
 # clean up
 #######################################
