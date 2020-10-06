@@ -314,7 +314,10 @@ static int processJson(const char *buffer)
 	    }
 	}
 
-	if (saveConf) saveConfig(&thConfig);
+	if (saveConf) {
+		saveConfig(&thConfig);
+		saveConf = false;
+	}
 
 	jsonPrintStatus();
 	return ret;
