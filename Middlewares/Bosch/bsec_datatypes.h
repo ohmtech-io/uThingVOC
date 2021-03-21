@@ -90,6 +90,7 @@ extern "C"
 #define BSEC_MAX_STATE_BLOB_SIZE     (139)        /*!< Maximum size (in bytes) of the data blobs returned by bsec_get_state()*/
 #define BSEC_SAMPLE_RATE_DISABLED    (65535.0f)      /*!< Sample rate of a disabled sensor */
 #define BSEC_SAMPLE_RATE_ULP         (0.0033333f)           /*!< Sample rate in case of Ultra Low Power Mode */
+#define BSEC_SAMPLE_RATE_CONTINUOUS  (1.0f)    /*!< Sample rate in case of Continuous Mode */ 
 #define BSEC_SAMPLE_RATE_LP          (0.33333f)            /*!< Sample rate in case of Low Power Mode */
 #define BSEC_SAMPLE_RATE_ULP_MEASUREMENT_ON_DEMAND         (0.0f)            /*!< Input value used to trigger an extra measurment (ULP plus) */        
 
@@ -387,12 +388,12 @@ typedef struct
      * Some virtual sensors provide a value in the accuracy field. If this is the case, the meaning of the field is as 
      * follows:
      *
-     * | Name                       | Value |  Accuracy description                                       |
-     * |----------------------------|-------|-------------------------------------------------------------|
-     * | UNRELIABLE                 |   0   | Sensor data is unreliable, the sensor must be calibrated    |
-     * | LOW_ACCURACY               |   1   | Low accuracy, sensor should be calibrated                   |
-     * | MEDIUM_ACCURACY            |   2   | Medium accuracy, sensor calibration may improve performance |
-     * | HIGH_ACCURACY              |   3   | High accuracy                                               |
+     * | Name                       | Value |  Accuracy description                                                                                       |
+     * |----------------------------|-------|-------------------------------------------------------------------------------------------------------------|
+     * | UNRELIABLE                 |   0   | Sensor data is unreliable, the sensor must be calibrated                                                    |
+     * | LOW_ACCURACY               |   1   | Low accuracy, sensor should be calibrated                                                                   |
+     * | MEDIUM_ACCURACY            |   2   | Medium accuracy, sensor calibration may improve performance                                                 |
+     * | HIGH_ACCURACY              |   3   | High accuracy                                                                                               |
      *
      * For example:
      * 
@@ -409,12 +410,12 @@ typedef struct
      *   performed automatically in the background if the sensor is exposed to clean and polluted air for approximately 
      *   30 minutes each.
      * 
-     *   | Virtual sensor             | Value |  Accuracy description                                           |
-     *   |----------------------------|-------|-----------------------------------------------------------------|
-     *   | IAQ                        |   0   | The sensor is not yet stabilized or in a run-in status           |
-     *   |                            |   1   | Calibration required                                            |
-     *   |                            |   2   | Calibration on-going                                            |
-     *   |                            |   3   | Calibration is done, now IAQ estimate achieves best performance  |
+     *   | Virtual sensor             | Value |  Accuracy description                                                                                                                                         |
+     *   |----------------------------|-------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+     *   | IAQ                        |   0   | Stabilization / run-in ongoing                                                                                                                                |
+     *   |                            |   1   | Low accuracy,to reach high accuracy(3),please expose sensor once to good air (e.g. outdoor air) and bad air (e.g. box with exhaled breath) for auto-trimming  |
+     *   |                            |   2   | Medium accuracy: auto-trimming ongoing                                                                                                                        |
+     *   |                            |   3   | High accuracy                                                                                                                                                 |
      */     
     uint8_t accuracy;           
 } bsec_output_t;
