@@ -85,7 +85,7 @@ return_values_init bsec_iot_init(float sample_rate, float temperature_offset, bm
     
     uint8_t bsec_state[BSEC_MAX_PROPERTY_BLOB_SIZE] = {0};
     uint8_t bsec_config[BSEC_MAX_PROPERTY_BLOB_SIZE] = {0};
-    uint8_t work_buffer[BSEC_MAX_PROPERTY_BLOB_SIZE] = {0};
+    uint8_t work_buffer[BSEC_MAX_WORKBUFFER_SIZE] = {0};
     int bsec_state_len, bsec_config_len;
     
     /* Fixed I2C configuration */
