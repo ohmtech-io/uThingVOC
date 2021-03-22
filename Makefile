@@ -226,7 +226,8 @@ flash:
 #fix here: https://sourceforge.net/p/dfu-util/tickets/40/?limit=25&page=1#a5f8
 #######################################
 dfu:
-	dfu-util -a 0 -D $(BUILD_DIR)/$(TARGET).bin  --dfuse-address 0x08000000:leave -d 0483:df11	
+	dfu-util -a 0 -D $(BUILD_DIR)/$(TARGET)  --dfuse-address 0x08000000:force:mass-erase:leave -d 0483:df11
+# 	dfu-util -a 0 -D $(BUILD_DIR)/$(TARGET).bin  --dfuse-address 0x08000000:leave -d 0483:df11	
 #######################################
 # clean up
 #######################################

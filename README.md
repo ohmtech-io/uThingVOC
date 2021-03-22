@@ -93,7 +93,7 @@ The programming process via USB requires two steps:
     To perform the firmware programming, issue the following command, where “USBthingVOC.bin” is the application to flash in **.bin** format (no HEX or ELF supported):
 
     ```  
-    dfu-util -a 0 -D USBthingVOC.bin --dfuse-address 0x08000000 -d 0483:df11  
+    dfu-util -a 0 -D build/USBthingVOC.bin  --dfuse-address 0x08000000:force:mass-erase:leave -d 0483:df11
     ```
      *Note:* In Linux, the dfu-util may need to be run as **root**, or a udev rule and permissions should be added.
 
