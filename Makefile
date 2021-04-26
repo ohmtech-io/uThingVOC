@@ -225,6 +225,9 @@ $(BUILD_DIR)/$(TARGET).dmp : $(BUILD_DIR)/$(TARGET).elf
 flash:
 	JLinkexe flash.jlink
 
+reset: 
+	JLinkexe reset.jlink
+	
 #######################################
 # Use dfu-util to program the device 
 # -- note on STM32L412: STM32L412 has an issue in the ROM boot loader.

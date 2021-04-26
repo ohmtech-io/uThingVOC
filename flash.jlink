@@ -1,5 +1,5 @@
-speed 4000
-device STM32F072CB
+speed 2000
+device STM32L412KB
 si 1
 con
 sleep 100

@@ -31,6 +31,8 @@
 #define RED_LED_Pin GPIO_PIN_1
 #define RED_LED_GPIO_Port GPIOA
 
+#define LED_ON GPIO_PIN_RESET //they are connected in open drain config
+#define LED_OFF GPIO_PIN_SET
 
 void Error_Handler(void);
 

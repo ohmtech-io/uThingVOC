@@ -37,7 +37,7 @@
 
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 
-#define TEMP_OFFSET 6.0f
+#define TEMP_OFFSET 3.3f //calibrated attached to a 4 ports USB hub.
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
@@ -95,12 +95,14 @@ int main(void)
   {
     /* IWDGRST flag set */
     HAL_Delay(1000);
+    UartLog("IWDGRST flag set!!");
   }
 
   if (__HAL_RCC_GET_FLAG(RCC_FLAG_BORRST) != RESET)
   {
     /* IWDGRST flag set */
     HAL_Delay(2000);
+    UartLog("RCC_FLAG_BORRST flag set!");
   }
   
   __HAL_RCC_CLEAR_RESET_FLAGS();
@@ -120,6 +122,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USART2_UART_Init();
 
+  HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, LED_ON);
   /* Self-test, it takes ~ 12 seconds */
   int8_t res = gasSensorInit(&gas_sensor);
   if (res == BME680_OK) {UartLog("BME680 initialized.");}
@@ -148,7 +151,7 @@ int main(void)
       UartLog("Error while initializing BME680!!!");
       Error_Handler();
   } else {
-     UartLog("Sensor and BSEC ready.");
+     UartLog("BME680 ready.");
      HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
   }
   
@@ -468,17 +471,17 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
+  // __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, BLUE_LED_Pin|RED_LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(RED_LED_GPIO_Port, BLUE_LED_Pin|RED_LED_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pins : BLUE_LED_Pin RED_LED_Pin */
   GPIO_InitStruct.Pin = BLUE_LED_Pin|RED_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(RED_LED_GPIO_Port, &GPIO_InitStruct);
 }
 
 /**
@@ -531,11 +534,11 @@ void secondsPeriodElapsedCb(TIM_HandleTypeDef *htim)
     else 
     {
       /*Blue LED ON*/
-      HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, LED_ON);
     }
   } else {
     /* Disable Blue LED */
-    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, LED_OFF);
   }
   /* Reporting period */
   if (++secCount >= thConfig.reportingPeriod && bsec_status == BSEC_OK)
@@ -552,7 +555,7 @@ void secondsPeriodElapsedCb(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* Red LED steady ON indicates error */
-  HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 0);
+  HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, LED_ON);
   UartLog("ERROR HANDLER!!!!!!!!!");
 }
 
