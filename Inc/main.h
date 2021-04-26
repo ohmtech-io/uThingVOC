@@ -23,20 +23,14 @@
 ****************************************************************************/
 #pragma once
 
-#include "stm32f0xx_hal.h"
+#include "stm32l4xx_hal.h"
+#include <stdio.h>
 
-#define PA3_Pin GPIO_PIN_3
-#define PA3_GPIO_Port GPIOA
-#define PA4_Pin GPIO_PIN_4
-#define PA4_GPIO_Port GPIOA
-#define BLUE_LED_Pin GPIO_PIN_12
-#define BLUE_LED_GPIO_Port GPIOB
-#define RED_LED_Pin GPIO_PIN_13
-#define RED_LED_GPIO_Port GPIOB
-#define PB6_Pin GPIO_PIN_6
-#define PB6_GPIO_Port GPIOB
-#define PB7_Pin GPIO_PIN_7
-#define PB7_GPIO_Port GPIOB
+#define BLUE_LED_Pin GPIO_PIN_0
+#define BLUE_LED_GPIO_Port GPIOA
+#define RED_LED_Pin GPIO_PIN_1
+#define RED_LED_GPIO_Port GPIOA
+
 
 void Error_Handler(void);
 
