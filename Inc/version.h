@@ -25,5 +25,7 @@
 #pragma once
 
 #define VERSION_MAJOR      (1)
-#define VERSION_MINOR      (2)
-#define VERSION_PATCH      (5)
+#define VERSION_MINOR      (3)
+#define VERSION_PATCH      (0)
+
+//Minor 3: change HW to revision 2 (based on STM32L412)

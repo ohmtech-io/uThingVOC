@@ -30,10 +30,17 @@ extern IWDG_HandleTypeDef   watchdogHandle;
 
 /* Let's store the BME680 state data on the last 2KBs...*/
 static const uint32_t bsecPageStartAddress = ADDR_FLASH_PAGE_63; 
-/* thConfig storage */
-static const uint32_t configStartAddress = ADDR_FLASH_PAGE_62; 
 
-static const uint32_t MAGIC_NUMBER = 0xDEADBEEF;
+
+/* thConfig storage STM32L412KB (128 KB Flash)*/
+static const uint32_t configStartAddress = ADDR_FLASH_PAGE_62; 
+static const uint8_t  pageNumber = 62;
+
+/*NOTE: On STM32L4 series the FLash is only programmed 72 bits at a time (64 bits plus 8 ECC bits)*/
+
+static const uint64_t MAGIC_NUMBER = 0xDDCCBBAADEADBEEF;
+
+
 
 /*!
  * @brief           Load previous library state from non-volatile memory
@@ -54,23 +61,23 @@ uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer)
 
 	volatile uint32_t flashAddress = bsecPageStartAddress;
 
-	if (MAGIC_NUMBER != *(volatile uint32_t*)flashAddress){
+	if (MAGIC_NUMBER != *(volatile uint64_t*)flashAddress){
 		/* first time (nothing saved yet) or error */
 		return 0;
 	}
-	flashAddress += 4;
+	flashAddress += 8;
 
-	uint32_t length =  *(volatile uint32_t*)flashAddress;
+	uint32_t length =  *(volatile uint64_t*)flashAddress;
 	if (n_buffer <= length){
 		/* error! the reserved size should be bigger than the saved length */
 		return 0;
 	}
-	flashAddress += 4;
+	flashAddress += 8;
 
-	volatile uint32_t *ptr = (volatile uint32_t* )state_buffer;
+	volatile uint64_t *ptr = (volatile uint64_t* )state_buffer;
 
-	for (int i=0; i < n_buffer; i += 4, ptr++, flashAddress += 4){   
-		*ptr = *(volatile uint32_t*)flashAddress;
+	for (int i=0; i < n_buffer; i += 8, ptr++, flashAddress += 8){   
+		*ptr = *(volatile uint64_t*)flashAddress;
 	}
 
 	UartLog("BSEC Configuration loaded from Flash (%ld bytes).", length);
@@ -98,66 +105,72 @@ void state_save(const uint8_t *state_buffer, uint32_t length)
      we don't want to be reset during a Flash write procedure!! */
     HAL_IWDG_Refresh(&watchdogHandle);
 
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_OPTVERR); 
     ret += HAL_FLASH_Unlock();
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);  
+    
     
       /* Fill EraseInit structure*/
-  	EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
-  	EraseInitStruct.PageAddress = bsecPageStartAddress;
-  	EraseInitStruct.NbPages = 1;
+    EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
+    EraseInitStruct.Page = pageNumber;
+    EraseInitStruct.Banks       = FLASH_BANK_1;
+    EraseInitStruct.NbPages = 1;
 
   	if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK){
   		Error_Handler(); //oops!
   	}
 
-
     volatile uint32_t flashAddress = bsecPageStartAddress;
      
     /* Store the magic number */
-    ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, MAGIC_NUMBER);
-    flashAddress += 4;
+    SET_BIT(FLASH->CR, FLASH_CR_PG);
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);  
+    ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flashAddress, MAGIC_NUMBER);
+    flashAddress += 8;
 
     /* Store the buffer length */
-    ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, length);
+    ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flashAddress, length);
     flashAddress += 4;
 
-    /* Store now the state_buffer, 4 bytes at a time */
-    volatile uint32_t *pRecord = (volatile uint32_t* )state_buffer; 
+    /* Store now the state_buffer, 8 bytes at a time */
+    volatile uint64_t *pRecord = (volatile uint64_t* )state_buffer; 
 
-    for (int i=0; i < length; i += 4, pRecord++, flashAddress += 4){
-        ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, *pRecord);
+    for (int i=0; i < length; i += 8, pRecord++, flashAddress += 8){
+        ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flashAddress, *pRecord);
     }
 
     ret += HAL_FLASH_Lock();
 }
 
-//***********
+
+
 int loadConfig(configs_t *config)
 {
-	volatile uint32_t flashAddress = configStartAddress;
+  volatile uint32_t flashAddress = configStartAddress;
 
-	if (MAGIC_NUMBER != *(volatile uint32_t*)flashAddress){
-		/* first time (nothing saved yet) or error */
-		return 0;
-	}
-	flashAddress += 4;
+  if (MAGIC_NUMBER != *(volatile uint64_t*)flashAddress){
+    /* first time (nothing saved yet) or error */
+    return 0;
+  }
+  flashAddress += 8;
 
-	uint8_t length = sizeof(configs_t);
-	volatile uint32_t *ptr = (volatile uint32_t* )config;
+  uint8_t length = sizeof(configs_t);
+  volatile uint64_t *ptr = (volatile uint64_t* )config;
 
-	for (int i=0; i < length; i += 4, ptr++, flashAddress += 4){   
-		*ptr = *(volatile uint32_t*)flashAddress;
-	}
+  for (int i=0; i < length; i += 8, ptr++, flashAddress += 8){   
+    *ptr = *(volatile uint64_t*)flashAddress;
+  }
 
-	UartLog("uThing Configuration loaded from Flash (%d bytes).", length);
+  UartLog("uThing Configuration loaded from Flash (%d bytes).", length);
 
-	return length;
+  return length;
 }
 
 int saveConfig(configs_t *config)
 {
-	int ret = 0;
-	static FLASH_EraseInitTypeDef EraseInitStruct;
-	uint32_t PageError;
+  int ret = 0;
+  static FLASH_EraseInitTypeDef EraseInitStruct;
+  uint32_t PageError;
 
     UartLog("Storing uThing configuration in Flash...");
 
@@ -165,28 +178,33 @@ int saveConfig(configs_t *config)
      we don't want to be reset during a Flash write procedure!! */
     HAL_IWDG_Refresh(&watchdogHandle);
 
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_OPTVERR); 
     ret += HAL_FLASH_Unlock();
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);  
     
       /* Fill EraseInit structure*/
-  	EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
-  	EraseInitStruct.PageAddress = configStartAddress;
-  	EraseInitStruct.NbPages = 1;
+    EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
+    EraseInitStruct.Page = pageNumber;
+    EraseInitStruct.Banks       = FLASH_BANK_1;
+    EraseInitStruct.NbPages = 1;
 
-  	if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK){
-  		Error_Handler(); //oops!
-  	}
+    if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK){
+      Error_Handler(); //oops!
+    }
 
     volatile uint32_t flashAddress = configStartAddress;
      
     /* Store the magic number */
-    ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, MAGIC_NUMBER);
-    flashAddress += 4;
+    SET_BIT(FLASH->CR, FLASH_CR_PG);
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);  
+    ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flashAddress, MAGIC_NUMBER);
+    flashAddress += 8;
 
-    /* Store now the state_buffer, 4 bytes at a time */
-    volatile uint32_t *pRecord = (uint32_t* )config; 
+    /* Store now the state_buffer, 8 bytes at a time */
+    volatile uint64_t *pRecord = (uint64_t* )config; 
 
-    for (int i=0; i < sizeof(configs_t); i += 4, pRecord++, flashAddress += 4){
-        ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, *pRecord);
+    for (int i=0; i < sizeof(configs_t); i += 8, pRecord++, flashAddress += 8){
+        ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flashAddress, *pRecord);
     }
 
     ret += HAL_FLASH_Lock();

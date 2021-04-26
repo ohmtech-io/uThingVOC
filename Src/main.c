@@ -1,7 +1,7 @@
 /***************************************************************************
 *** MIT License ***
 *
-*** Copyright (c) 2020 Daniel Mancuso - OhmTech.io **
+*** Copyright (c) 2021 Daniel Mancuso - OhmTech.io **
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,8 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.     
 ****************************************************************************/
+// TODO: port i2c, uart, sysconfig, it, tim_base, gpios
+
 #include "main.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
@@ -38,11 +40,11 @@
 #define TEMP_OFFSET 6.0f
 
 /* Private variables ---------------------------------------------------------*/
-I2C_HandleTypeDef hi2c2;
+I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim2;
 
-UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
 /*------------------------*/
 
 /* IWDG handler declaration (independent, 40kHz LSI)*/
@@ -50,10 +52,11 @@ IWDG_HandleTypeDef   watchdogHandle;
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_I2C2_Init(void);
+static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_USART1_UART_Init(void);
+static void MX_USART2_UART_Init(void);
 static void WatchdogInit(IWDG_HandleTypeDef *watchdogHandle);
+static void secondsPeriodElapsedCb(TIM_HandleTypeDef *htim);
 
 void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temperature, 
                   float humidity, float pressure, float raw_temperature, float raw_humidity,
@@ -87,15 +90,35 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+    /*##-1- Check if the system has resumed from IWDG reset ####################*/
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
+  {
+    /* IWDGRST flag set */
+    HAL_Delay(1000);
+  }
+
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_BORRST) != RESET)
+  {
+    /* IWDGRST flag set */
+    HAL_Delay(2000);
+  }
+  
+  __HAL_RCC_CLEAR_RESET_FLAGS();
+
   /* Obtain serial number */
   initConfig(); 
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C2_Init();
+  MX_I2C1_Init();
   MX_USB_DEVICE_Init();
+      /* Note:
+      The CubeMX doesn't set up the USB_IRQHandler on the startup file, then we get a hardfault when the USB_IRQ hits an unautorized address!!!
+    https://community.st.com/s/question/0D50X0000Az372YSQQ/stm32l412-hardfault-while-using-minimal-cubeide-example
+    */
+
   MX_TIM2_Init();
-  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
 
   /* Self-test, it takes ~ 12 seconds */
   int8_t res = gasSensorInit(&gas_sensor);
@@ -257,7 +280,7 @@ int8_t user_i2c_read(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16
   int8_t rslt = 0; /* Return 0 for Success, non-zero for failure */
   uint8_t addr = BME680_I2C_ADDR_PRIMARY << 1;
 
-  rslt = HAL_I2C_Mem_Read(&hi2c2, addr, reg_addr, 1, reg_data, len, 1000);
+  rslt = HAL_I2C_Mem_Read(&hi2c1, addr, reg_addr, 1, reg_data, len, 1000);
   return rslt;
 }
 
@@ -266,7 +289,7 @@ int8_t user_i2c_write(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint1
   int8_t rslt = 0; /* Return 0 for Success, non-zero for failure */
   uint8_t addr = BME680_I2C_ADDR_PRIMARY << 1;
 
-  rslt = HAL_I2C_Mem_Write(&hi2c2, addr, reg_addr, 1, reg_data, len, 1000);
+  rslt = HAL_I2C_Mem_Write(&hi2c1, addr, reg_addr, 1, reg_data, len, 1000);
 
   return rslt;
 }
@@ -293,69 +316,84 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Configure the main internal regulator output voltage 
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Initializes the CPU, AHB and APB busses clocks 
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 1; //1: 80MHZ, 2: 40MHz
+  RCC_OscInitStruct.PLL.PLLN = 10;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI48;
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_USART1;
-  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_I2C1
+                              |RCC_PERIPHCLK_USB;
+  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
-
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
 }
 
-/**
-  * @brief I2C2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C2_Init(void)
+/* I2C1 init function */
+void MX_I2C1_Init(void)
 {
-  hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x20303E5D;
-  hi2c2.Init.OwnAddress1 = 0;
-  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c2.Init.OwnAddress2 = 0;
-  hi2c2.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
+
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x10909CEC; //80MHz
+// +  hi2c1.Init.Timing = 0x00909BEB; //40MHz
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
   {
     Error_Handler();
   }
-  /**Configure Analogue filter 
+  /** Configure Analogue filter 
   */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c2, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     Error_Handler();
   }
-  /**Configure Digital filter 
+  /** Configure Digital filter 
   */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c2, 0) != HAL_OK)
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
   {
     Error_Handler();
   }
+
 }
 
 /**
@@ -390,30 +428,33 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
 
+  HAL_TIM_RegisterCallback(&htim2,
+                           HAL_TIM_PERIOD_ELAPSED_CB_ID,
+                           (pTIM_CallbackTypeDef)secondsPeriodElapsedCb);
+
   HAL_TIM_Base_Start_IT(&htim2);
 }
 
-/**
-  * @brief USART1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART1_UART_Init(void)
+/* USART2 init function */
+
+void MX_USART2_UART_Init(void)
 {
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
+
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
   }
+
 }
 
 /**
@@ -432,37 +473,25 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, BLUE_LED_Pin|RED_LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PA3_Pin PA4_Pin */
-  GPIO_InitStruct.Pin = PA3_Pin|PA4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   /*Configure GPIO pins : BLUE_LED_Pin RED_LED_Pin */
   GPIO_InitStruct.Pin = BLUE_LED_Pin|RED_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PB6_Pin PB7_Pin */
-  GPIO_InitStruct.Pin = PB6_Pin|PB7_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
 /**
- (IWDG independent watchdog, 40kHz LSI)
+ (IWDG independent watchdog, 32kHz LSI)
  **/
 static void WatchdogInit(IWDG_HandleTypeDef *wdtHandle)
 {
   wdtHandle->Instance = IWDG;
-  /* 40kHz / 128 = 312 Hz */
+  /* 32kHz / 128 = 250 Hz
+      counter = 2500 -> Countdown = 10s */
   wdtHandle->Init.Prescaler = IWDG_PRESCALER_128; 
   wdtHandle->Init.Window    = IWDG_WINDOW_DISABLE;
-  /* 3000 / 312Hz ~= 10sec. */
-  wdtHandle->Init.Reload    = 3000;
+  wdtHandle->Init.Reload    = 2500;
 
   if (HAL_IWDG_Init(wdtHandle) != HAL_OK)
   {
@@ -478,7 +507,7 @@ static void WatchdogInit(IWDG_HandleTypeDef *wdtHandle)
   */
 PUTCHAR_PROTOTYPE
 {
-  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF);
 
   return ch;
 }
@@ -492,21 +521,23 @@ PUTCHAR_PROTOTYPE
   * @param  htim : TIM handle
   * @retval None
   */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+void secondsPeriodElapsedCb(TIM_HandleTypeDef *htim)
 {
   /* Blink blue LED until BSEC give us a valid IAQ value, ~5 minutes */
   if (thConfig.ledEnabled){
     if (iaqAccuracy == 0){  
-      HAL_GPIO_TogglePin(GPIOB, BLUE_LED_Pin);  
+      HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);  
     } 
     else 
     {
+      /*Blue LED ON*/
       HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
     }
   } else {
     /* Disable Blue LED */
     HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
   }
+  /* Reporting period */
   if (++secCount >= thConfig.reportingPeriod && bsec_status == BSEC_OK)
   {
     secCount = 0;
@@ -520,6 +551,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   */
 void Error_Handler(void)
 {
+  /* Red LED steady ON indicates error */
   HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 0);
   UartLog("ERROR HANDLER!!!!!!!!!");
 }
