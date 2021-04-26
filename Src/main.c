@@ -122,28 +122,36 @@ int main(void)
   MX_TIM2_Init();
   MX_USART2_UART_Init();
 
+
+  
+
   HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, LED_ON);
   /* Self-test, it takes ~ 12 seconds */
-  int8_t res = gasSensorInit(&gas_sensor);
-  if (res == BME680_OK) {UartLog("BME680 initialized.");}
-    else                {UartLog("Error initializing the sensor, %d", res);}
+  // int8_t res = gasSensorInit(&gas_sensor);
+  // if (res == BME680_OK) {UartLog("BME680 initialized.");}
+  //   else                {UartLog("Error initializing the sensor, %d", res);}
 
-  res = bme680_self_test(&gas_sensor);
-  if (res == BME680_OK) {
-    HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 1); /*Disable RED LED*/
-    UartLog("BME680: Self Test passed OK."); 
-  }
-  else {
-      UartLog("Error!!! Self Test FAILED! %d", res);
-      Error_Handler();
-  }
+  // res = bme680_self_test(&gas_sensor);
+  // if (res == BME680_OK) {
+  //   HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 1); /*Disable RED LED*/
+  //   UartLog("BME680: Self Test passed OK."); 
+  // }
+  // else {
+  //     UartLog("Error!!! Self Test FAILED! %d", res);
+  //     Error_Handler();
+  // }
 
   /*******************************************************/
-
   WatchdogInit(&watchdogHandle);
 
   UartLog("Initializing BSEC and BME680...");
-  ret = bsec_iot_init(BSEC_SAMPLE_RATE_LP, TEMP_OFFSET, user_i2c_write, user_i2c_read, user_delay_ms, state_load, config_load);
+  ret = bsec_iot_init(BSEC_SAMPLE_RATE_LP, 
+                      TEMP_OFFSET, 
+                      user_i2c_write, 
+                      user_i2c_read, 
+                      user_delay_ms, 
+                      state_load, 
+                      config_load);
 
   if (ret.bme680_status)
   {
@@ -163,7 +171,11 @@ int main(void)
   } else {
       /* Call to endless loop function which reads and processes data based on sensor settings */
       /* state is saved every 24 hours (24*3600 / 3) */
-      bsec_iot_loop(user_delay_ms, get_timestamp_us, output_ready, state_save, 28800);
+      bsec_iot_loop(user_delay_ms, 
+                  get_timestamp_us, 
+                  output_ready, 
+                  state_save, 
+                  28800);
   }
  
   return -1; /*This should never be reached*/
@@ -254,8 +266,8 @@ int gasSensorConfig(struct bme680_dev *gas_sensor)
   gas_sensor->power_mode = BME680_FORCED_MODE; 
 
   /* Set the required sensor settings needed */
-  set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL | BME680_FILTER_SEL 
-      | BME680_GAS_SENSOR_SEL;
+  set_required_settings = BME680_OST_SEL | BME680_OSP_SEL | BME680_OSH_SEL 
+                        | BME680_FILTER_SEL | BME680_GAS_SENSOR_SEL;
 
   /* Set the desired sensor configuration */
   res = bme680_set_sensor_settings(set_required_settings, gas_sensor);
@@ -409,10 +421,13 @@ static void MX_TIM2_Init(void)
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
+  //TIM2,6,7 are on APB1 (TIM1,15,16 in APB2)
+  uint32_t tim2clock = HAL_RCC_GetPCLK1Freq();
+
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 4799;
+  htim2.Init.Prescaler = tim2clock / 10000 - 1; //10kHz
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 9999;
+  htim2.Init.Period = 10000 - 1; //1 Hz 
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -557,6 +572,7 @@ void Error_Handler(void)
   /* Red LED steady ON indicates error */
   HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, LED_ON);
   UartLog("ERROR HANDLER!!!!!!!!!");
+  // while(1);
 }
 
 #ifdef  USE_FULL_ASSERT

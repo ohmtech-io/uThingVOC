@@ -46,7 +46,7 @@ static const char *FORMAT_STRING[] = {
     "JSON", "HUMAN", "CSV", "BINARY",
 };
 
-static const char *HW_ID = { "uThing::VOC rev.A"};
+static const char *HW_ID = { "uThing::VOC rev.2"};
 
 static const char *PERIOD_STRING[] = {
     "3 sec",  /*0*/

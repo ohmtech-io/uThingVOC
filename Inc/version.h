@@ -26,6 +26,7 @@
 
 #define VERSION_MAJOR      (1)
 #define VERSION_MINOR      (3)
-#define VERSION_PATCH      (0)
+#define VERSION_PATCH      (1)
 
 //Minor 3: change HW to revision 2 (based on STM32L412)
+//patch: 1: first release on new rev.2 hardware
