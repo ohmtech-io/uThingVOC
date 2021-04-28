@@ -21,8 +21,6 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.     
 ****************************************************************************/
-// TODO: port i2c, uart, sysconfig, it, tim_base, gpios
-
 #include "main.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
@@ -37,20 +35,16 @@
 
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 
+/* Hardcoded configurations */
 #define TEMP_OFFSET 3.3f //calibrated attached to a 4 ports USB hub.
 #define BLUE_LED_BRIGHTNESS 25//0-100%
 
-/* Private variables ---------------------------------------------------------*/
-I2C_HandleTypeDef hi2c1;
 
+I2C_HandleTypeDef hi2c1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim6;
-
 UART_HandleTypeDef huart2;
-/*------------------------*/
-
-/* IWDG handler declaration (independent, 40kHz LSI)*/
-IWDG_HandleTypeDef   watchdogHandle;
+IWDG_HandleTypeDef watchdogHandle;
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -93,7 +87,7 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-    /*##-1- Check if the system has resumed from IWDG reset ####################*/
+    /*##-1- Check if the system has resumed from IWDG reset #######*/
   if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
   {
     /* IWDGRST flag set */
@@ -141,8 +135,6 @@ int main(void)
   //     UartLog("Error!!! Self Test FAILED! %d", res);
   //     Error_Handler();
   // }
-
-  /*******************************************************/
   WatchdogInit(&watchdogHandle);
 
   UartLog("Initializing BSEC and BME680...");
@@ -178,7 +170,6 @@ int main(void)
                   state_save, 
                   28800);
   }
- 
   return -1; /*This should never be reached*/
 }
 
@@ -405,9 +396,7 @@ void MX_TIM2_Init(void)
 {
   const uint16_t TIM2_PRESCALER_VALUE = 4; //80MHz / 4 = 16MHz
   const uint32_t TIM2_PERIOD_VALUE = 16000; //16MHz / 16k = 1kHz 
-// #define TIM2_PULSE_VALUE TIM2_PERIOD_VALUE / 2 //50% duty cycle
   const uint32_t TIM2_PULSE_VALUE = TIM2_PERIOD_VALUE / 4; //25% duty cycle
-
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
@@ -449,7 +438,6 @@ void MX_TIM2_Init(void)
   /* Configure GPIO as Open Drain and start PWM */
   HAL_TIM_MspPostInit(&htim2);
 }
-
 
 /* TIM6 init function --> 1 sec. timebase */
 void MX_TIM6_Init(void)
@@ -506,7 +494,6 @@ static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   // __HAL_RCC_GPIOB_CLK_ENABLE();
 
@@ -542,8 +529,6 @@ static void WatchdogInit(IWDG_HandleTypeDef *wdtHandle)
 
 /**
   * @brief  Retargets the C library printf function to the USART.
-  * @param  None
-  * @retval None
   */
 PUTCHAR_PROTOTYPE
 {
@@ -596,16 +581,13 @@ void secondsPeriodElapsedCb(TIM_HandleTypeDef *htim)
   if (thConfig.ledEnabled){
     if (iaqAccuracy == 0){  
       setBlueLed(TOGGLE);
-      // HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);  
     } 
     else 
     {
       setBlueLed(ON);
-      // HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, LED_ON);
     }
   } else {
     setBlueLed(OFF);
-    // HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, LED_OFF);
   }
   /* Reporting period */
   if (++secCount >= thConfig.reportingPeriod && bsec_status == BSEC_OK)

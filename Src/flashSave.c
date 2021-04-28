@@ -1,7 +1,7 @@
 /***************************************************************************
 *** MIT License ***
 *
-*** Copyright (c) 2020 Daniel Mancuso - OhmTech.io **
+*** Copyright (c) 2021 Daniel Mancuso - OhmTech.io **
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,8 +40,6 @@ static const uint8_t  pageNumber = 62;
 
 static const uint64_t MAGIC_NUMBER = 0xDDCCBBAADEADBEEF;
 
-
-
 /*!
  * @brief           Load previous library state from non-volatile memory
  *
@@ -52,13 +50,9 @@ static const uint64_t MAGIC_NUMBER = 0xDDCCBBAADEADBEEF;
  */
 uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer)
 {
-    // ...
     // Load a previous library state from non-volatile memory, if available.
-    //
     // Return zero if loading was unsuccessful or no state was available, 
     // otherwise return length of loaded state string.
-    // ...
-
 	volatile uint32_t flashAddress = bsecPageStartAddress;
 
 	if (MAGIC_NUMBER != *(volatile uint64_t*)flashAddress){
@@ -109,7 +103,6 @@ void state_save(const uint8_t *state_buffer, uint32_t length)
     ret += HAL_FLASH_Unlock();
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);  
     
-    
       /* Fill EraseInit structure*/
     EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
     EraseInitStruct.Page = pageNumber;
@@ -121,7 +114,7 @@ void state_save(const uint8_t *state_buffer, uint32_t length)
   	}
 
     volatile uint32_t flashAddress = bsecPageStartAddress;
-     
+    
     /* Store the magic number */
     SET_BIT(FLASH->CR, FLASH_CR_PG);
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);  

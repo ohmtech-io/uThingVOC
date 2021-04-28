@@ -1,7 +1,7 @@
 /***************************************************************************
 *** MIT License ***
 *
-*** Copyright (c) 2020 Daniel Mancuso - OhmTech.io **
+*** Copyright (c) 2021 Daniel Mancuso - OhmTech.io **
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -32,15 +32,12 @@
 #include "jsmn.h"
 #include "flashSave.h"
 
-
-
 configs_t thConfig = { .format = JSON,
 					 .reportingPeriodIdx = 0,
 					 .reportingPeriod 	 = 3, /*default*/
 					 .ledEnabled		 = true,
 					 .temperatureOffset  = 0,
 					};
-
 
 static const char *FORMAT_STRING[] = {
     "JSON", "HUMAN", "CSV", "BINARY",
@@ -70,7 +67,6 @@ static void jsonPrintDevInfo(void);
 static char outBuffer[outBufferSize];
 shellBuffer_t shellBuffer;
 
-
 /* Obtain the serial number from the MCU UID */
 void initConfig(void)
 {
@@ -88,7 +84,6 @@ void initConfig(void)
 	loadConfig(&thConfig);
 }
 
-
 int uprintf(const char *format, ...)
 {
 	va_list arguments;
@@ -96,10 +91,6 @@ int uprintf(const char *format, ...)
 	va_start(arguments, format);
 
 	int len = vsprintf(outBuffer, format, arguments);
-	// int len = snprintf(outBuffer, 100, format, arguments);
-	// UartLog("len: %i, outBuffer: %s", len, outBuffer);
-	
-	// printf("%s", outBuffer);
 	
 	va_end(arguments);
 	
@@ -108,7 +99,6 @@ int uprintf(const char *format, ...)
 	{
 		UartLog("USB_BUSY");
 	}	
-
 	return len;
 }
 

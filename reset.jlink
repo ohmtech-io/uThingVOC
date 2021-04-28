@@ -1,0 +1,8 @@
+speed 2000
+device STM32L412KB
+si 1
+con
+sleep 100
+r
+g
+q
