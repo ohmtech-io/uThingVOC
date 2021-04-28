@@ -35,6 +35,7 @@
 #define LED_OFF GPIO_PIN_SET
 
 void Error_Handler(void);
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 #if (APP_DEBUG_LEVEL > 0)
 #define  UartLog(...)   printf("\rDEBUG : ") ;\
