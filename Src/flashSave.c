@@ -110,7 +110,8 @@ void state_save(const uint8_t *state_buffer, uint32_t length)
     EraseInitStruct.NbPages = 1;
 
   	if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK){
-  		Error_Handler(); //oops!
+      UartLog("ERROR Storing BSEC configuration in Flash!");
+      Error_Handler(); //oops!
   	}
 
     volatile uint32_t flashAddress = bsecPageStartAddress;
@@ -123,7 +124,7 @@ void state_save(const uint8_t *state_buffer, uint32_t length)
 
     /* Store the buffer length */
     ret += HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flashAddress, length);
-    flashAddress += 4;
+    flashAddress += 8;
 
     /* Store now the state_buffer, 8 bytes at a time */
     volatile uint64_t *pRecord = (volatile uint64_t* )state_buffer; 
@@ -182,6 +183,7 @@ int saveConfig(configs_t *config)
     EraseInitStruct.NbPages = 1;
 
     if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK){
+      UartLog("ERROR Storing uThing configuration in Flash!");
       Error_Handler(); //oops!
     }
 

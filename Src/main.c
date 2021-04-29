@@ -163,7 +163,7 @@ int main(void)
       Error_Handler();
   } else {
       /* Call to endless loop function which reads and processes data based on sensor settings */
-      /* state is saved every 24 hours (24*3600 / 3) */
+      /* state is saved every 24 hours (24*3600 / 3 = 28800) */
       bsec_iot_loop(user_delay_ms, 
                   get_timestamp_us, 
                   output_ready, 
@@ -606,7 +606,8 @@ void Error_Handler(void)
   /* Red LED steady ON indicates error */
   HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, LED_ON);
   UartLog("ERROR HANDLER!!!!!!!!!");
-  // while(1);
+  //block here so we can notice the watchdog reset
+  while(1);
 }
 
 #ifdef  USE_FULL_ASSERT
